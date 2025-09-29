@@ -7,3 +7,9 @@
 
 .vscode
 set-github-remote.sh
+
+# Application data
+notes.json
+
+# UV
+uv.lock
