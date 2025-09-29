@@ -146,6 +146,27 @@ class FileAPI:
         """Get current directory path"""
         return self.current_directory
     
+    def get_file_content(self, file_path):
+        """Read the content of a markdown file"""
+        try:
+            if not self._is_markdown_file(os.path.basename(file_path)):
+                return {"success": False, "error": "Not a markdown file"}
+            
+            if not os.path.exists(file_path):
+                return {"success": False, "error": "File not found"}
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                
+            return {
+                "success": True,
+                "content": content,
+                "filename": os.path.basename(file_path),
+                "path": file_path
+            }
+        except Exception as e:
+            return {"success": False, "error": f"Error reading file: {str(e)}"}
+    
     def format_file_size(self, size_bytes):
         """Format file size in human readable format"""
         if size_bytes is None:

@@ -132,13 +132,20 @@ class MarkdownTreeExplorer {
             });
         });
         
-        // Select file or directory
+        // Handle clicks on tree items
         this.filesList.querySelectorAll('.tree-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const itemPath = e.currentTarget.dataset.path;
                 const isDirectory = e.currentTarget.dataset.isDirectory === 'true';
-                this.selectItem(itemPath, isDirectory);
+                
+                if (isDirectory) {
+                    // Single click on directory toggles expansion
+                    this.toggleDirectory(itemPath);
+                } else {
+                    // Single click on file shows content
+                    this.selectItem(itemPath, isDirectory);
+                }
             });
         });
     }
@@ -222,13 +229,18 @@ class MarkdownTreeExplorer {
         this.renderTree();
     }
     
-    selectItem(itemPath, isDirectory) {
+    async selectItem(itemPath, isDirectory) {
         this.selectedNode = itemPath;
         
         // Find the item in tree data
         const item = this._findItemByPath(this.treeData, itemPath);
         if (item) {
-            this.showFileInfo(item);
+            if (isDirectory) {
+                this.showDirectoryInfo(item);
+            } else {
+                // Load and render markdown content for files
+                await this.showMarkdownFile(item);
+            }
         }
         
         // Update visual selection
@@ -248,47 +260,96 @@ class MarkdownTreeExplorer {
         return null;
     }
     
-    showFileInfo(item) {
-        const itemTypeText = item.is_directory ? 'Directory' : 'Markdown File';
-        const sizeText = item.is_directory ? 'Directory' : this.formatFileSize(item.size);
-        
+    showDirectoryInfo(item) {
         const fileInfoHTML = `
             <div class="file-info-header">
                 <div class="file-icon-large">${this.getTreeIcon(item)}</div>
                 <div class="file-name-large">${this.escapeHtml(item.name)}</div>
             </div>
-            <div class="file-properties">
-                <div class="property">
-                    <span class="label">Type:</span>
-                    <span class="value">${this.escapeHtml(item.type)}</span>
+            <div class="directory-info">
+                <p><i class="fas fa-info-circle"></i> This is a directory containing markdown files.</p>
+                <p><i class="fas fa-mouse-pointer"></i> Double-click to expand/collapse, or use the arrow icon.</p>
+                <div class="file-properties">
+                    <div class="property">
+                        <span class="label">Path:</span>
+                        <span class="value">${this.escapeHtml(item.path)}</span>
+                    </div>
+                    <div class="property">
+                        <span class="label">Modified:</span>
+                        <span class="value">${new Date(item.modified).toLocaleString()}</span>
+                    </div>
+                    <div class="property">
+                        <span class="label">Contains:</span>
+                        <span class="value">${item.children ? item.children.length : 0} items</span>
+                    </div>
                 </div>
-                <div class="property">
-                    <span class="label">Size:</span>
-                    <span class="value">${sizeText}</span>
-                </div>
-                <div class="property">
-                    <span class="label">Modified:</span>
-                    <span class="value">${new Date(item.modified).toLocaleString()}</span>
-                </div>
-                <div class="property">
-                    <span class="label">Permissions:</span>
-                    <span class="value">${this.escapeHtml(item.permissions)}</span>
-                </div>
-                <div class="property">
-                    <span class="label">Path:</span>
-                    <span class="value">${this.escapeHtml(item.path)}</span>
-                </div>
-                ${!item.is_directory ? `
-                <div class="property">
-                    <span class="label">Directory:</span>
-                    <span class="value">${this.escapeHtml(item.path.split('/').slice(0, -1).join('/') || '/')}</span>
-                </div>
-                ` : ''}
             </div>
         `;
         
         document.getElementById('fileInfoContent').innerHTML = fileInfoHTML;
         this.showFileInfoPanel();
+    }
+    
+    async showMarkdownFile(item) {
+        try {
+            // Show loading state
+            const loadingHTML = `
+                <div class="file-info-header">
+                    <div class="file-icon-large">${this.getTreeIcon(item)}</div>
+                    <div class="file-name-large">${this.escapeHtml(item.name)}</div>
+                </div>
+                <div class="markdown-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading markdown content...
+                </div>
+            `;
+            document.getElementById('fileInfoContent').innerHTML = loadingHTML;
+            this.showFileInfoPanel();
+            
+            // Load file content
+            const response = await pywebview.api.get_file_content(item.path);
+            
+            if (response.success) {
+                // Configure marked options for better rendering
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    sanitize: false
+                });
+                
+                const renderedContent = marked.parse(response.content);
+                
+                const fileInfoHTML = `
+                    <div class="file-info-header">
+                        <div class="file-icon-large">${this.getTreeIcon(item)}</div>
+                        <div class="file-name-large">${this.escapeHtml(item.name)}</div>
+                        <div class="file-meta">
+                            <span class="file-size">${this.formatFileSize(item.size)}</span>
+                            <span class="file-modified">${new Date(item.modified).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="markdown-content">
+                        ${renderedContent}
+                    </div>
+                `;
+                
+                document.getElementById('fileInfoContent').innerHTML = fileInfoHTML;
+            } else {
+                const errorHTML = `
+                    <div class="file-info-header">
+                        <div class="file-icon-large">${this.getTreeIcon(item)}</div>
+                        <div class="file-name-large">${this.escapeHtml(item.name)}</div>
+                    </div>
+                    <div class="markdown-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading file: ${this.escapeHtml(response.error)}</p>
+                    </div>
+                `;
+                document.getElementById('fileInfoContent').innerHTML = errorHTML;
+            }
+        } catch (error) {
+            console.error('Error loading markdown file:', error);
+            this.showToast('Error loading markdown file', 'error');
+        }
     }
     
     showWelcomeScreen() {

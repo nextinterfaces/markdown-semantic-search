@@ -13,7 +13,8 @@ A modern, elegant desktop application for exploring and browsing markdown files 
 - **Markdown-Only Filter**: Shows only `.md` and `.mdx` files
 - **Clean Interface**: Minimalist design showing only file and directory names
 - **Smart Directory Display**: Only shows folders containing markdown files
-- **File Details Panel**: View file metadata when selecting items
+- **Markdown Rendering**: View rendered markdown content with full formatting support
+- **Single-Click Navigation**: Single-click directories to expand/collapse
 - **Real-time Search**: Filter files by name or type
 - **Keyboard Shortcuts**: Quick actions with familiar shortcuts
 - **Cross-platform**: Works on Windows, macOS, and Linux
@@ -91,9 +92,19 @@ If you prefer using pip:
 ## 🎯 How to Use
 
 ### Exploring the Tree View
-- **Expand/Collapse Folders**: Click the chevron (▶/▼) icons next to folder names
+- **Expand/Collapse Folders**: 
+  - Click the chevron (▶/▼) icons next to folder names
+  - **Single-click** on any folder to expand/collapse it
 - **Navigate Directories**: Only directories containing `.md` or `.mdx` files are shown
-- **View File Details**: Click on any file to see its metadata in the details panel
+- **View Markdown Content**: Click on any `.md` or `.mdx` file to see its rendered content on the right
+
+### Reading Markdown Files
+- **Single-click** any markdown file in the tree to view its rendered content
+- The right panel will display the markdown with proper formatting:
+  - Headers, lists, code blocks
+  - Links, images, tables
+  - Blockquotes and styling
+- Loading indicator shows while content is being fetched
 
 ### Searching Files
 - Use the search box in the header to filter by filename
@@ -113,6 +124,7 @@ The application uses a hybrid architecture:
 
 - **Backend**: Python with pywebview providing the desktop application framework
 - **Frontend**: HTML, CSS, and JavaScript for the tree view interface
+- **Markdown Rendering**: Uses Marked.js library for client-side markdown parsing
 - **File System**: Directly reads `.md` and `.mdx` files from the file system
 - **API**: Python methods exposed to JavaScript via pywebview's API bridge for file operations
 
@@ -235,6 +247,7 @@ This project is open source and available under the MIT License.
 ## 🙏 Acknowledgments
 
 - [pywebview](https://pywebview.flowrl.com/) - For the excellent Python-to-web bridge
+- [Marked.js](https://marked.js.org/) - For fast, reliable markdown parsing
 - [Font Awesome](https://fontawesome.com/) - For the beautiful icons
 - The Python and web development communities
 
