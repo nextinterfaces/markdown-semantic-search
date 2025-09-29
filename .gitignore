@@ -1,0 +1,9 @@
+.ipynb_checkpoints
+.venv
+.env
+
+# Temporary files, for example, from tests.
+/tmp/
+
+.vscode
+set-github-remote.sh
