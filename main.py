@@ -14,39 +14,105 @@ class FileAPI:
     
     def __init__(self):
         self.current_directory = os.getcwd()
+        self.markdown_extensions = {'.md', '.mdx'}
     
     def get_files(self):
-        """Get all files and directories in the current folder"""
+        """Get all files and directories in tree structure, filtering for markdown files"""
         try:
-            files = []
-            for item in os.listdir(self.current_directory):
-                item_path = os.path.join(self.current_directory, item)
+            return self._build_tree(self.current_directory)
+        except Exception as e:
+            print(f"Error listing files: {e}")
+            return []
+    
+    def _build_tree(self, directory_path, level=0):
+        """Recursively build tree structure with markdown files"""
+        tree_items = []
+        
+        try:
+            # Limit depth to prevent infinite recursion and improve performance
+            if level > 5:
+                return tree_items
+                
+            items = os.listdir(directory_path)
+            items.sort()
+            
+            for item in items:
+                # Skip hidden files and directories
+                if item.startswith('.'):
+                    continue
+                    
+                item_path = os.path.join(directory_path, item)
                 
                 try:
                     item_stat = os.stat(item_path)
                     is_dir = os.path.isdir(item_path)
                     
-                    file_info = {
-                        "name": item,
-                        "path": item_path,
-                        "is_directory": is_dir,
-                        "size": item_stat.st_size if not is_dir else None,
-                        "modified": datetime.fromtimestamp(item_stat.st_mtime).isoformat(),
-                        "permissions": stat.filemode(item_stat.st_mode),
-                        "type": "Directory" if is_dir else self.get_file_type(item)
-                    }
-                    files.append(file_info)
-                except (OSError, PermissionError) as e:
+                    if is_dir:
+                        # Check if directory contains any markdown files (recursively)
+                        if self._has_markdown_files(item_path):
+                            children = self._build_tree(item_path, level + 1)
+                            tree_item = {
+                                "name": item,
+                                "path": item_path,
+                                "is_directory": True,
+                                "modified": datetime.fromtimestamp(item_stat.st_mtime).isoformat(),
+                                "permissions": stat.filemode(item_stat.st_mode),
+                                "type": "Directory",
+                                "children": children,
+                                "expanded": False,
+                                "level": level,
+                                "has_children": len(children) > 0
+                            }
+                            tree_items.append(tree_item)
+                    else:
+                        # Only include markdown files
+                        if self._is_markdown_file(item):
+                            tree_item = {
+                                "name": item,
+                                "path": item_path,
+                                "is_directory": False,
+                                "size": item_stat.st_size,
+                                "modified": datetime.fromtimestamp(item_stat.st_mtime).isoformat(),
+                                "permissions": stat.filemode(item_stat.st_mode),
+                                "type": self.get_file_type(item),
+                                "level": level,
+                                "has_children": False
+                            }
+                            tree_items.append(tree_item)
+                            
+                except (OSError, PermissionError):
                     # Skip files that can't be accessed
                     continue
+                    
+        except (OSError, PermissionError):
+            # Skip directories that can't be accessed
+            pass
             
-            # Sort: directories first, then files, both alphabetically
-            files.sort(key=lambda x: (not x["is_directory"], x["name"].lower()))
-            return files
-            
-        except Exception as e:
-            print(f"Error listing files: {e}")
-            return []
+        return tree_items
+    
+    def _has_markdown_files(self, directory_path):
+        """Check if directory or its subdirectories contain markdown files"""
+        try:
+            for root, dirs, files in os.walk(directory_path):
+                # Skip hidden directories
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                
+                for file in files:
+                    if self._is_markdown_file(file):
+                        return True
+                        
+                # Limit depth for performance
+                current_depth = root[len(directory_path):].count(os.sep)
+                if current_depth >= 5:
+                    dirs.clear()
+                    
+            return False
+        except (OSError, PermissionError):
+            return False
+    
+    def _is_markdown_file(self, filename):
+        """Check if file is a markdown file (.md or .mdx)"""
+        return any(filename.lower().endswith(ext) for ext in self.markdown_extensions)
     
     def get_file_type(self, filename):
         """Get file type based on extension"""
@@ -55,39 +121,26 @@ class FileAPI:
         
         ext = filename.split('.')[-1].lower()
         file_types = {
-            'txt': 'Text File',
             'md': 'Markdown',
+            'mdx': 'MDX Markdown',
+            'txt': 'Text File',
             'py': 'Python',
             'js': 'JavaScript',
             'html': 'HTML',
             'css': 'CSS',
             'json': 'JSON',
-            'xml': 'XML',
-            'pdf': 'PDF',
-            'doc': 'Word Document',
-            'docx': 'Word Document',
-            'xls': 'Excel',
-            'xlsx': 'Excel',
-            'ppt': 'PowerPoint',
-            'pptx': 'PowerPoint',
-            'jpg': 'Image',
-            'jpeg': 'Image',
-            'png': 'Image',
-            'gif': 'Image',
-            'svg': 'SVG Image',
-            'mp4': 'Video',
-            'avi': 'Video',
-            'mov': 'Video',
-            'mp3': 'Audio',
-            'wav': 'Audio',
-            'zip': 'Archive',
-            'tar': 'Archive',
-            'gz': 'Archive',
-            'exe': 'Executable',
-            'app': 'Application'
+            'xml': 'XML'
         }
         
         return file_types.get(ext, f'{ext.upper()} File')
+    
+    def expand_directory(self, directory_path):
+        """Get children of a specific directory for dynamic expansion"""
+        try:
+            return self._build_tree(directory_path, 0)
+        except Exception as e:
+            print(f"Error expanding directory {directory_path}: {e}")
+            return []
     
     def get_current_directory(self):
         """Get current directory path"""
@@ -116,7 +169,7 @@ def create_app():
     
     # Create the webview window
     window = webview.create_window(
-        title="File Explorer",
+        title="Markdown Explorer",
         url="web/index.html",
         js_api=api,
         width=1200,
@@ -136,8 +189,8 @@ def main():
     # Create the application
     window = create_app()
     
-    # Start the webview
-    webview.start(debug=True)
+    # Start the webview (debug=False hides dev tools by default, but keeps them accessible)
+    webview.start(debug=False)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,12 @@
-// File Explorer Frontend JavaScript
+// Markdown Tree Explorer Frontend JavaScript
 
-class FileExplorer {
+class MarkdownTreeExplorer {
     constructor() {
-        this.files = [];
-        this.filteredFiles = [];
+        this.treeData = [];
+        this.filteredTreeData = [];
         this.currentDirectory = '';
+        this.expandedNodes = new Set();
+        this.selectedNode = null;
         
         this.initializeElements();
         this.bindEvents();
@@ -27,15 +29,15 @@ class FileExplorer {
         this.refreshBtn.addEventListener('click', () => this.refreshFiles());
         
         // Search functionality
-        this.searchInput.addEventListener('input', (e) => this.filterFiles(e.target.value));
+        this.searchInput.addEventListener('input', (e) => this.filterTree(e.target.value));
     }
     
     async loadFiles() {
         try {
-            this.files = await pywebview.api.get_files();
+            this.treeData = await pywebview.api.get_files();
             this.currentDirectory = await pywebview.api.get_current_directory();
-            this.filteredFiles = [...this.files];
-            this.renderFilesList();
+            this.filteredTreeData = [...this.treeData];
+            this.renderTree();
             this.updateCurrentDirectory();
         } catch (error) {
             console.error('Error loading files:', error);
@@ -51,27 +53,56 @@ class FileExplorer {
     }
     
     async refreshFiles() {
+        // Clear expanded state to refresh completely
+        this.expandedNodes.clear();
         await this.loadFiles();
-        this.showToast('Files refreshed');
+        this.showToast('Markdown files refreshed');
     }
     
-    filterFiles(query) {
+    filterTree(query) {
         if (!query.trim()) {
-            this.filteredFiles = [...this.files];
+            this.filteredTreeData = [...this.treeData];
         } else {
             const searchQuery = query.toLowerCase();
-            this.filteredFiles = this.files.filter(file => 
-                file.name.toLowerCase().includes(searchQuery) ||
-                file.type.toLowerCase().includes(searchQuery)
-            );
+            this.filteredTreeData = this._filterTreeRecursive(this.treeData, searchQuery);
         }
-        this.renderFilesList();
+        this.renderTree();
     }
     
-    renderFilesList() {
-        const files = this.filteredFiles;
+    _filterTreeRecursive(items, query) {
+        return items.filter(item => {
+            if (item.is_directory) {
+                // For directories, include if name matches OR any children match
+                const nameMatches = item.name.toLowerCase().includes(query);
+                const childrenMatch = item.children && this._filterTreeRecursive(item.children, query).length > 0;
+                
+                if (nameMatches || childrenMatch) {
+                    // Create a copy with filtered children
+                    return {
+                        ...item,
+                        children: item.children ? this._filterTreeRecursive(item.children, query) : []
+                    };
+                }
+                return false;
+            } else {
+                // For files, include if name matches
+                return item.name.toLowerCase().includes(query);
+            }
+        }).map(item => {
+            if (item.is_directory && item.children) {
+                return {
+                    ...item,
+                    children: this._filterTreeRecursive(item.children, query)
+                };
+            }
+            return item;
+        });
+    }
+    
+    renderTree() {
+        const treeItems = this.filteredTreeData;
         
-        if (files.length === 0) {
+        if (treeItems.length === 0) {
             this.filesList.innerHTML = '';
             this.filesList.appendChild(this.emptyState);
             this.showWelcomeScreen();
@@ -80,84 +111,96 @@ class FileExplorer {
         
         this.emptyState.style.display = 'none';
         
-        const filesHTML = files.map(file => this.createFileItemHTML(file)).join('');
-        this.filesList.innerHTML = filesHTML;
+        const treeHTML = this._renderTreeItems(treeItems);
+        this.filesList.innerHTML = treeHTML;
         
-        // Add click events to file items
-        this.filesList.querySelectorAll('.file-item').forEach(item => {
+        // Add click events to tree items
+        this._attachTreeEvents();
+    }
+    
+    _renderTreeItems(items, level = 0) {
+        return items.map(item => this._createTreeItemHTML(item, level)).join('');
+    }
+    
+    _attachTreeEvents() {
+        // Toggle directory expansion
+        this.filesList.querySelectorAll('.tree-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const itemPath = e.currentTarget.dataset.path;
+                this.toggleDirectory(itemPath);
+            });
+        });
+        
+        // Select file or directory
+        this.filesList.querySelectorAll('.tree-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                const fileName = e.currentTarget.dataset.fileName;
-                this.selectFile(fileName);
+                e.stopPropagation();
+                const itemPath = e.currentTarget.dataset.path;
+                const isDirectory = e.currentTarget.dataset.isDirectory === 'true';
+                this.selectItem(itemPath, isDirectory);
             });
         });
     }
     
-    createFileItemHTML(file) {
-        const date = new Date(file.modified).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    _createTreeItemHTML(item, level = 0) {
+        const indent = level * 20;
+        const isExpanded = this.expandedNodes.has(item.path);
+        const isSelected = this.selectedNode === item.path;
+        const icon = this.getTreeIcon(item);
         
-        const size = file.is_directory ? '' : this.formatFileSize(file.size);
-        const icon = this.getFileIcon(file);
-        
-        return `
-            <div class="file-item" data-file-name="${this.escapeHtml(file.name)}">
-                <div class="file-icon">${icon}</div>
-                <div class="file-details">
-                    <div class="file-name">${this.escapeHtml(file.name)}</div>
-                    <div class="file-info">
-                        <span class="file-type">${this.escapeHtml(file.type)}</span>
-                        ${size ? `<span class="file-size">${size}</span>` : ''}
-                        <span class="file-date">${date}</span>
-                    </div>
-                </div>
-                <div class="file-permissions">${this.escapeHtml(file.permissions)}</div>
-            </div>
+        let html = `
+            <div class="tree-item ${isSelected ? 'selected' : ''}" 
+                 data-path="${this.escapeHtml(item.path)}"
+                 data-is-directory="${item.is_directory}"
+                 style="padding-left: ${indent}px;">
+                <div class="tree-item-content">
         `;
-    }
-    
-    getFileIcon(file) {
-        if (file.is_directory) {
-            return '<i class="fas fa-folder"></i>';
+        
+        // Toggle button for directories
+        if (item.is_directory) {
+            const toggleIcon = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+            html += `
+                <button class="tree-toggle" data-path="${this.escapeHtml(item.path)}">
+                    <i class="${toggleIcon}"></i>
+                </button>
+            `;
+        } else {
+            html += `<span class="tree-spacer"></span>`;
         }
         
-        const ext = file.name.split('.').pop().toLowerCase();
+        html += `
+                    <div class="tree-icon">${icon}</div>
+                    <div class="tree-details">
+                        <div class="tree-name">${this.escapeHtml(item.name)}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add children if expanded
+        if (item.is_directory && isExpanded && item.children && item.children.length > 0) {
+            html += `<div class="tree-children">`;
+            html += this._renderTreeItems(item.children, level + 1);
+            html += `</div>`;
+        }
+        
+        return html;
+    }
+    
+    getTreeIcon(item) {
+        if (item.is_directory) {
+            const isExpanded = this.expandedNodes.has(item.path);
+            return isExpanded ? '<i class="fas fa-folder-open"></i>' : '<i class="fas fa-folder"></i>';
+        }
+        
+        const ext = item.name.split('.').pop().toLowerCase();
         const iconMap = {
-            'txt': 'fas fa-file-alt',
             'md': 'fab fa-markdown',
-            'py': 'fab fa-python',
-            'js': 'fab fa-js-square',
-            'html': 'fab fa-html5',
-            'css': 'fab fa-css3-alt',
-            'json': 'fas fa-file-code',
-            'xml': 'fas fa-file-code',
-            'pdf': 'fas fa-file-pdf',
-            'doc': 'fas fa-file-word',
-            'docx': 'fas fa-file-word',
-            'xls': 'fas fa-file-excel',
-            'xlsx': 'fas fa-file-excel',
-            'ppt': 'fas fa-file-powerpoint',
-            'pptx': 'fas fa-file-powerpoint',
-            'jpg': 'fas fa-file-image',
-            'jpeg': 'fas fa-file-image',
-            'png': 'fas fa-file-image',
-            'gif': 'fas fa-file-image',
-            'svg': 'fas fa-file-image',
-            'mp4': 'fas fa-file-video',
-            'avi': 'fas fa-file-video',
-            'mov': 'fas fa-file-video',
-            'mp3': 'fas fa-file-audio',
-            'wav': 'fas fa-file-audio',
-            'zip': 'fas fa-file-archive',
-            'tar': 'fas fa-file-archive',
-            'gz': 'fas fa-file-archive'
+            'mdx': 'fab fa-markdown'
         };
         
-        return `<i class="${iconMap[ext] || 'fas fa-file'}"></i>`;
+        return `<i class="${iconMap[ext] || 'fab fa-markdown'}"></i>`;
     }
     
     formatFileSize(bytes) {
@@ -170,40 +213,77 @@ class FileExplorer {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
     
-    selectFile(fileName) {
-        const file = this.files.find(f => f.name === fileName);
-        if (!file) return;
-        
-        this.showFileInfo(file);
+    toggleDirectory(dirPath) {
+        if (this.expandedNodes.has(dirPath)) {
+            this.expandedNodes.delete(dirPath);
+        } else {
+            this.expandedNodes.add(dirPath);
+        }
+        this.renderTree();
     }
     
-    showFileInfo(file) {
+    selectItem(itemPath, isDirectory) {
+        this.selectedNode = itemPath;
+        
+        // Find the item in tree data
+        const item = this._findItemByPath(this.treeData, itemPath);
+        if (item) {
+            this.showFileInfo(item);
+        }
+        
+        // Update visual selection
+        this.renderTree();
+    }
+    
+    _findItemByPath(items, targetPath) {
+        for (const item of items) {
+            if (item.path === targetPath) {
+                return item;
+            }
+            if (item.children) {
+                const found = this._findItemByPath(item.children, targetPath);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+    
+    showFileInfo(item) {
+        const itemTypeText = item.is_directory ? 'Directory' : 'Markdown File';
+        const sizeText = item.is_directory ? 'Directory' : this.formatFileSize(item.size);
+        
         const fileInfoHTML = `
             <div class="file-info-header">
-                <div class="file-icon-large">${this.getFileIcon(file)}</div>
-                <div class="file-name-large">${this.escapeHtml(file.name)}</div>
+                <div class="file-icon-large">${this.getTreeIcon(item)}</div>
+                <div class="file-name-large">${this.escapeHtml(item.name)}</div>
             </div>
             <div class="file-properties">
                 <div class="property">
                     <span class="label">Type:</span>
-                    <span class="value">${this.escapeHtml(file.type)}</span>
+                    <span class="value">${this.escapeHtml(item.type)}</span>
                 </div>
                 <div class="property">
                     <span class="label">Size:</span>
-                    <span class="value">${file.is_directory ? 'Directory' : this.formatFileSize(file.size)}</span>
+                    <span class="value">${sizeText}</span>
                 </div>
                 <div class="property">
                     <span class="label">Modified:</span>
-                    <span class="value">${new Date(file.modified).toLocaleString()}</span>
+                    <span class="value">${new Date(item.modified).toLocaleString()}</span>
                 </div>
                 <div class="property">
                     <span class="label">Permissions:</span>
-                    <span class="value">${this.escapeHtml(file.permissions)}</span>
+                    <span class="value">${this.escapeHtml(item.permissions)}</span>
                 </div>
                 <div class="property">
                     <span class="label">Path:</span>
-                    <span class="value">${this.escapeHtml(file.path)}</span>
+                    <span class="value">${this.escapeHtml(item.path)}</span>
                 </div>
+                ${!item.is_directory ? `
+                <div class="property">
+                    <span class="label">Directory:</span>
+                    <span class="value">${this.escapeHtml(item.path.split('/').slice(0, -1).join('/') || '/')}</span>
+                </div>
+                ` : ''}
             </div>
         `;
         
@@ -243,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wait for pywebview API to be available
     const initApp = () => {
         if (window.pywebview && window.pywebview.api) {
-            new FileExplorer();
+            new MarkdownTreeExplorer();
         } else {
             setTimeout(initApp, 100);
         }

@@ -1,21 +1,22 @@
-# MyNotes - Desktop Notes Application
+# Markdown Explorer - Desktop Markdown File Browser
 
-A modern, elegant desktop notes application built with **pywebview** that combines the power of Python with a beautiful web-based user interface.
+A modern, elegant desktop application for exploring and browsing markdown files built with **pywebview**. Features an expandable tree view that shows only `.md` and `.mdx` files in your directory structure.
 
-![MyNotes App](https://img.shields.io/badge/Python-3.7+-blue.svg)
-![PyWebView](https://img.shields.io/badge/PyWebView-4.4.1-green.svg)
+![Markdown Explorer](https://img.shields.io/badge/Python-3.7+-blue.svg)
+![PyWebView](https://img.shields.io/badge/PyWebView-6.0+-green.svg)
 ![UV](https://img.shields.io/badge/UV-Fast%20Python%20Manager-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## ✨ Features
 
-- **Modern UI**: Clean, responsive interface with smooth animations
-- **Full CRUD Operations**: Create, read, update, and delete notes
-- **Real-time Search**: Instantly search through your notes by title or content
-- **Auto-save**: Automatically saves your notes as you type
+- **Expandable Tree View**: Navigate directory structure with collapsible folders
+- **Markdown-Only Filter**: Shows only `.md` and `.mdx` files
+- **Clean Interface**: Minimalist design showing only file and directory names
+- **Smart Directory Display**: Only shows folders containing markdown files
+- **File Details Panel**: View file metadata when selecting items
+- **Real-time Search**: Filter files by name or type
 - **Keyboard Shortcuts**: Quick actions with familiar shortcuts
 - **Cross-platform**: Works on Windows, macOS, and Linux
-- **Local Storage**: All notes are stored locally in JSON format
 - **No Internet Required**: Fully offline application
 - **Modern Python Tooling**: Uses `uv` for lightning-fast dependency management
 - **Easy Setup**: One command installation with automatic virtual environment
@@ -58,6 +59,8 @@ pip install uv
 3. **Run the application**
    ```bash
    uv run python main.py
+   # Or use the included run script:
+   ./run.sh
    ```
 
 ### Alternative Installation (Traditional Method)
@@ -87,26 +90,20 @@ If you prefer using pip:
 
 ## 🎯 How to Use
 
-### Creating Notes
-- Click the **"New Note"** button in the header
-- Or use the keyboard shortcut: `Ctrl+N` (or `Cmd+N` on macOS)
-- Start typing your note title and content
+### Exploring the Tree View
+- **Expand/Collapse Folders**: Click the chevron (▶/▼) icons next to folder names
+- **Navigate Directories**: Only directories containing `.md` or `.mdx` files are shown
+- **View File Details**: Click on any file to see its metadata in the details panel
 
-### Editing Notes
-- Click on any note in the sidebar to open it
-- Edit the title by clicking in the title field
-- Edit content in the main text area
-- Notes auto-save as you type, or manually save with `Ctrl+S`
-
-### Searching Notes
-- Use the search box in the header
+### Searching Files
+- Use the search box in the header to filter by filename
 - Or press `Ctrl+F` (or `Cmd+F` on macOS) to focus the search
-- Search works across both titles and content
+- Search works across file names and types
 
-### Deleting Notes
-- Open the note you want to delete
-- Click the **"Delete"** button
-- Confirm the deletion (this action cannot be undone)
+### Refreshing the View
+- Click the **"Refresh"** button in the header
+- Or use `Ctrl+R` or `F5` to refresh the file list
+- This will scan for new or changed markdown files
 
 ## 🛠️ Technical Details
 
@@ -115,31 +112,32 @@ If you prefer using pip:
 The application uses a hybrid architecture:
 
 - **Backend**: Python with pywebview providing the desktop application framework
-- **Frontend**: HTML, CSS, and JavaScript for the user interface
-- **Data Storage**: JSON file for simple, portable note storage
-- **API**: Python methods exposed to JavaScript via pywebview's API bridge
+- **Frontend**: HTML, CSS, and JavaScript for the tree view interface
+- **File System**: Directly reads `.md` and `.mdx` files from the file system
+- **API**: Python methods exposed to JavaScript via pywebview's API bridge for file operations
 
 ### File Structure
 
 ```
-mynotes/
+markdown-explorer/
 ├── main.py              # Main application entry point
+├── run.sh              # Quick run script
 ├── pyproject.toml       # Project configuration and dependencies (uv)
 ├── requirements.txt     # Python dependencies (pip fallback)
 ├── uv.lock             # Locked dependency versions (generated)
-├── notes.json          # Notes data (created automatically)
+├── sample.md           # Sample markdown file for testing
 ├── web/
 │   ├── index.html      # Main HTML template
-│   ├── style.css       # Styling and layout
-│   └── script.js       # Frontend JavaScript logic
+│   ├── style.css       # Tree view styling and layout
+│   └── script.js       # Frontend JavaScript tree logic
 └── README.md           # This file
 ```
 
 ### Key Components
 
-1. **NotesAPI Class** (`main.py`): Handles all note operations (CRUD)
-2. **NotesApp Class** (`script.js`): Manages the frontend interface and user interactions
-3. **Responsive UI**: Mobile-friendly design that works on different screen sizes
+1. **FileAPI Class** (`main.py`): Handles file system operations and tree building
+2. **MarkdownTreeExplorer Class** (`script.js`): Manages the tree view interface and interactions
+3. **Responsive UI**: Clean tree design that works on different screen sizes
 
 ### Why uv?
 
@@ -155,8 +153,8 @@ This project uses [uv](https://docs.astral.sh/uv/) instead of traditional pip fo
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+N` / `Cmd+N` | Create new note |
-| `Ctrl+S` / `Cmd+S` | Save current note |
+| `Ctrl+R` / `Cmd+R` | Refresh file tree |
+| `F5` | Refresh file tree |
 | `Ctrl+F` / `Cmd+F` | Focus search box |
 
 ## 🎨 Customization
@@ -181,8 +179,8 @@ Edit `web/style.css` to customize colors, fonts, and layout:
 
 The application is designed to be easily extensible:
 
-1. **Backend**: Add new methods to the `NotesAPI` class in `main.py`
-2. **Frontend**: Extend the `NotesApp` class in `web/script.js`
+1. **Backend**: Add new methods to the `FileAPI` class in `main.py`
+2. **Frontend**: Extend the `MarkdownTreeExplorer` class in `web/script.js`
 3. **UI**: Modify `web/index.html` and `web/style.css` for interface changes
 
 ## 🐛 Troubleshooting
@@ -194,9 +192,9 @@ The application is designed to be easily extensible:
    - Check that all dependencies are installed: `uv sync`
    - Try running with debug mode: The app already runs with `debug=True`
 
-2. **Notes not saving**
-   - Check file permissions in the application directory
-   - Ensure the application has write access to create `notes.json`
+2. **Files not showing**
+   - Ensure there are `.md` or `.mdx` files in the current directory or subdirectories
+   - Check file permissions - the application needs read access to scan directories
 
 3. **UI not loading**
    - Verify that the `web/` directory and all files exist
@@ -204,28 +202,21 @@ The application is designed to be easily extensible:
 
 ### Debug Mode
 
-The application runs in debug mode by default, which:
-- Opens browser developer tools
-- Provides detailed error messages
-- Allows hot-reloading of web assets
+The application runs with debug mode disabled by default for a clean user experience. You can still access developer tools when needed:
 
-To disable debug mode, change `debug=True` to `debug=False` in `main.py`.
+- **macOS**: Right-click and select "Inspect Element" or use `Cmd+Option+I`
+- **Windows/Linux**: Right-click and select "Inspect" or use `F12`
 
-## 📝 Data Format
+To enable debug mode (auto-opens developer tools), change `debug=False` to `debug=True` in `main.py`.
 
-Notes are stored in `notes.json` with the following structure:
+## 📁 Supported File Types
 
-```json
-[
-  {
-    "id": 1,
-    "title": "My First Note",
-    "content": "This is the content of my note...",
-    "created_at": "2023-10-01T12:00:00.000000",
-    "updated_at": "2023-10-01T12:30:00.000000"
-  }
-]
-```
+The application scans for and displays:
+
+- **`.md`** files - Standard Markdown files
+- **`.mdx`** files - MDX (Markdown with JSX) files
+
+Directory structure is preserved and only directories containing these file types are shown in the tree view.
 
 ## 🤝 Contributing
 
@@ -249,4 +240,4 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Enjoy taking notes with MyNotes! 📝✨**
+**Enjoy exploring your markdown files! 📁✨**

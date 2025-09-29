@@ -144,7 +144,8 @@ body {
 }
 
 .files-list {
-    padding: 1rem 0;
+    padding: 0;
+    overflow-y: auto;
 }
 
 .empty-state {
@@ -164,92 +165,91 @@ body {
     color: #495057;
 }
 
-.file-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f8f9fa;
+/* Tree View Styles */
+.tree-item {
     cursor: pointer;
     transition: all 0.2s ease;
-    position: relative;
-    gap: 0.75rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-.file-item:hover {
+.tree-item:hover {
     background: #f8f9fa;
 }
 
-.file-item.active {
+.tree-item.selected {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-.file-icon {
-    font-size: 1.2rem;
+.tree-item-content {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+    min-height: 40px;
+}
+
+.tree-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 3px;
     color: #6c757d;
+    font-size: 0.8rem;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.tree-toggle:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.tree-item.selected .tree-toggle {
+    color: rgba(255,255,255,0.8);
+}
+
+.tree-item.selected .tree-toggle:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.tree-spacer {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.tree-icon {
+    font-size: 1.1rem;
+    color: #667eea;
     width: 20px;
     text-align: center;
     flex-shrink: 0;
 }
 
-.file-item.active .file-icon {
+.tree-item.selected .tree-icon {
     color: rgba(255,255,255,0.9);
 }
 
-.file-details {
+.tree-details {
     flex: 1;
     min-width: 0;
 }
 
-.file-name {
+.tree-name {
     font-weight: 500;
     font-size: 0.9rem;
-    margin-bottom: 0.25rem;
     line-height: 1.3;
     word-break: break-word;
 }
 
-.file-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: #6c757d;
-    line-height: 1.2;
-}
-
-.file-item.active .file-info {
-    color: rgba(255,255,255,0.8);
-}
-
-.file-type {
-    background: #e9ecef;
-    padding: 0.1rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.7rem;
-}
-
-.file-item.active .file-type {
-    background: rgba(255,255,255,0.2);
-}
-
-.file-size {
-    color: #868e96;
-}
-
-.file-date {
-    color: #adb5bd;
-}
-
-.file-permissions {
-    font-size: 0.7rem;
-    font-family: monospace;
-    color: #6c757d;
-    flex-shrink: 0;
-}
-
-.file-item.active .file-permissions {
-    color: rgba(255,255,255,0.7);
+.tree-children {
+    border-left: 1px solid #e9ecef;
+    margin-left: 10px;
 }
 
 .current-directory {
