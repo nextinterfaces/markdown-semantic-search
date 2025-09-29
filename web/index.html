@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyNotes</title>
+    <title>File Explorer</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -12,14 +12,14 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1><i class="fas fa-sticky-note"></i> MyNotes</h1>
+                <h1><i class="fas fa-folder-open"></i> File Explorer</h1>
                 <div class="header-actions">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Search notes...">
+                        <input type="text" id="searchInput" placeholder="Search files...">
                     </div>
-                    <button id="newNoteBtn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> New Note
+                    <button id="refreshBtn" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -29,11 +29,11 @@
         <main class="main-content">
             <!-- Sidebar -->
             <aside class="sidebar">
-                <div class="notes-list" id="notesList">
+                <div class="files-list" id="filesList">
                     <div class="empty-state" id="emptyState">
-                        <i class="fas fa-sticky-note"></i>
-                        <h3>No notes yet</h3>
-                        <p>Create your first note to get started!</p>
+                        <i class="fas fa-folder-open"></i>
+                        <h3>No files found</h3>
+                        <p>The current directory appears to be empty.</p>
                     </div>
                 </div>
             </aside>
@@ -42,25 +42,19 @@
             <section class="content-area">
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-content">
-                        <i class="fas fa-sticky-note"></i>
-                        <h2>Welcome to MyNotes</h2>
-                        <p>Select a note from the sidebar or create a new one to get started.</p>
+                        <i class="fas fa-folder-open"></i>
+                        <h2>Welcome to File Explorer</h2>
+                        <p>Select a file from the sidebar to view its details.</p>
+                        <div class="current-directory">
+                            <small id="currentDir">Loading current directory...</small>
+                        </div>
                     </div>
                 </div>
 
-                <div class="note-editor" id="noteEditor" style="display: none;">
-                    <div class="editor-header">
-                        <input type="text" id="noteTitle" placeholder="Note title..." class="title-input">
-                        <div class="editor-actions">
-                            <button id="saveNoteBtn" class="btn btn-success">
-                                <i class="fas fa-save"></i> Save
-                            </button>
-                            <button id="deleteNoteBtn" class="btn btn-danger">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="file-info-content" id="fileInfoContent">
+                        <!-- File details will be populated here -->
                     </div>
-                    <textarea id="noteContent" placeholder="Start writing your note..."></textarea>
                 </div>
             </section>
         </main>

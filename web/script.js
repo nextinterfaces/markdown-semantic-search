@@ -1,241 +1,224 @@
-// MyNotes Frontend JavaScript
+// File Explorer Frontend JavaScript
 
-class NotesApp {
+class FileExplorer {
     constructor() {
-        this.currentNote = null;
-        this.notes = [];
-        this.isEditing = false;
+        this.files = [];
+        this.filteredFiles = [];
+        this.currentDirectory = '';
         
         this.initializeElements();
         this.bindEvents();
-        this.loadNotes();
+        this.loadFiles();
     }
     
     initializeElements() {
         // Get DOM elements
-        this.notesList = document.getElementById('notesList');
+        this.filesList = document.getElementById('filesList');
         this.emptyState = document.getElementById('emptyState');
         this.welcomeScreen = document.getElementById('welcomeScreen');
-        this.noteEditor = document.getElementById('noteEditor');
-        this.noteTitle = document.getElementById('noteTitle');
-        this.noteContent = document.getElementById('noteContent');
+        this.fileInfo = document.getElementById('fileInfo');
         this.searchInput = document.getElementById('searchInput');
-        this.newNoteBtn = document.getElementById('newNoteBtn');
-        this.saveNoteBtn = document.getElementById('saveNoteBtn');
-        this.deleteNoteBtn = document.getElementById('deleteNoteBtn');
+        this.refreshBtn = document.getElementById('refreshBtn');
         this.toast = document.getElementById('toast');
     }
     
     bindEvents() {
         // Button events
-        this.newNoteBtn.addEventListener('click', () => this.createNewNote());
-        this.saveNoteBtn.addEventListener('click', () => this.saveCurrentNote());
-        this.deleteNoteBtn.addEventListener('click', () => this.deleteCurrentNote());
+        this.refreshBtn.addEventListener('click', () => this.refreshFiles());
         
         // Search functionality
-        this.searchInput.addEventListener('input', (e) => this.searchNotes(e.target.value));
-        
-        // Auto-save on content change (with debounce)
-        let saveTimeout;
-        const autoSave = () => {
-            if (this.currentNote && this.isEditing) {
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(() => this.saveCurrentNote(true), 2000);
-            }
-        };
-        
-        this.noteTitle.addEventListener('input', autoSave);
-        this.noteContent.addEventListener('input', autoSave);
-        
-        // Mark as editing when user starts typing
-        this.noteTitle.addEventListener('input', () => this.isEditing = true);
-        this.noteContent.addEventListener('input', () => this.isEditing = true);
+        this.searchInput.addEventListener('input', (e) => this.filterFiles(e.target.value));
     }
     
-    async loadNotes() {
+    async loadFiles() {
         try {
-            this.notes = await pywebview.api.get_notes();
-            this.renderNotesList();
+            this.files = await pywebview.api.get_files();
+            this.currentDirectory = await pywebview.api.get_current_directory();
+            this.filteredFiles = [...this.files];
+            this.renderFilesList();
+            this.updateCurrentDirectory();
         } catch (error) {
-            console.error('Error loading notes:', error);
-            this.showToast('Error loading notes', 'error');
+            console.error('Error loading files:', error);
+            this.showToast('Error loading files', 'error');
         }
     }
     
-    renderNotesList(notesToRender = null) {
-        const notes = notesToRender || this.notes;
+    updateCurrentDirectory() {
+        const currentDirElement = document.getElementById('currentDir');
+        if (currentDirElement) {
+            currentDirElement.textContent = `Current directory: ${this.currentDirectory}`;
+        }
+    }
+    
+    async refreshFiles() {
+        await this.loadFiles();
+        this.showToast('Files refreshed');
+    }
+    
+    filterFiles(query) {
+        if (!query.trim()) {
+            this.filteredFiles = [...this.files];
+        } else {
+            const searchQuery = query.toLowerCase();
+            this.filteredFiles = this.files.filter(file => 
+                file.name.toLowerCase().includes(searchQuery) ||
+                file.type.toLowerCase().includes(searchQuery)
+            );
+        }
+        this.renderFilesList();
+    }
+    
+    renderFilesList() {
+        const files = this.filteredFiles;
         
-        if (notes.length === 0) {
-            this.notesList.innerHTML = '';
-            this.notesList.appendChild(this.emptyState);
+        if (files.length === 0) {
+            this.filesList.innerHTML = '';
+            this.filesList.appendChild(this.emptyState);
             this.showWelcomeScreen();
             return;
         }
         
         this.emptyState.style.display = 'none';
         
-        const notesHTML = notes.map(note => this.createNoteItemHTML(note)).join('');
-        this.notesList.innerHTML = notesHTML;
+        const filesHTML = files.map(file => this.createFileItemHTML(file)).join('');
+        this.filesList.innerHTML = filesHTML;
         
-        // Add click events to note items
-        this.notesList.querySelectorAll('.note-item').forEach(item => {
+        // Add click events to file items
+        this.filesList.querySelectorAll('.file-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                const noteId = parseInt(e.currentTarget.dataset.noteId);
-                this.selectNote(noteId);
+                const fileName = e.currentTarget.dataset.fileName;
+                this.selectFile(fileName);
             });
         });
     }
     
-    createNoteItemHTML(note) {
-        const preview = note.content.substring(0, 100) + (note.content.length > 100 ? '...' : '');
-        const date = new Date(note.created_at).toLocaleDateString('en-US', {
+    createFileItemHTML(file) {
+        const date = new Date(file.modified).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
-            year: 'numeric'
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
         
+        const size = file.is_directory ? '' : this.formatFileSize(file.size);
+        const icon = this.getFileIcon(file);
+        
         return `
-            <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
-                 data-note-id="${note.id}">
-                <div class="note-title">${this.escapeHtml(note.title)}</div>
-                <div class="note-preview">${this.escapeHtml(preview)}</div>
-                <div class="note-date">${date}</div>
+            <div class="file-item" data-file-name="${this.escapeHtml(file.name)}">
+                <div class="file-icon">${icon}</div>
+                <div class="file-details">
+                    <div class="file-name">${this.escapeHtml(file.name)}</div>
+                    <div class="file-info">
+                        <span class="file-type">${this.escapeHtml(file.type)}</span>
+                        ${size ? `<span class="file-size">${size}</span>` : ''}
+                        <span class="file-date">${date}</span>
+                    </div>
+                </div>
+                <div class="file-permissions">${this.escapeHtml(file.permissions)}</div>
             </div>
         `;
     }
     
-    selectNote(noteId) {
-        const note = this.notes.find(n => n.id === noteId);
-        if (!note) return;
-        
-        this.currentNote = note;
-        this.isEditing = false;
-        
-        // Update UI
-        this.noteTitle.value = note.title;
-        this.noteContent.value = note.content;
-        
-        this.showNoteEditor();
-        this.updateActiveNote();
-    }
-    
-    updateActiveNote() {
-        this.notesList.querySelectorAll('.note-item').forEach(item => {
-            item.classList.remove('active');
-            if (this.currentNote && parseInt(item.dataset.noteId) === this.currentNote.id) {
-                item.classList.add('active');
-            }
-        });
-    }
-    
-    async createNewNote() {
-        const title = 'Untitled Note';
-        const content = '';
-        
-        try {
-            const response = await pywebview.api.add_note(title, content);
-            
-            if (response.success) {
-                this.notes.unshift(response.note);
-                this.currentNote = response.note;
-                this.isEditing = true;
-                
-                this.noteTitle.value = title;
-                this.noteContent.value = content;
-                
-                this.renderNotesList();
-                this.showNoteEditor();
-                this.noteTitle.focus();
-                this.noteTitle.select();
-                
-                this.showToast('New note created');
-            } else {
-                this.showToast(response.error || 'Failed to create note', 'error');
-            }
-        } catch (error) {
-            console.error('Error creating note:', error);
-            this.showToast('Error creating note', 'error');
-        }
-    }
-    
-    async saveCurrentNote(isAutoSave = false) {
-        if (!this.currentNote) return;
-        
-        const title = this.noteTitle.value.trim() || 'Untitled Note';
-        const content = this.noteContent.value;
-        
-        try {
-            const response = await pywebview.api.update_note(this.currentNote.id, title, content);
-            
-            if (response.success) {
-                // Update the note in our local array
-                const noteIndex = this.notes.findIndex(n => n.id === this.currentNote.id);
-                if (noteIndex !== -1) {
-                    this.notes[noteIndex] = response.note;
-                    this.currentNote = response.note;
-                }
-                
-                this.isEditing = false;
-                this.renderNotesList();
-                
-                if (!isAutoSave) {
-                    this.showToast('Note saved');
-                }
-            } else {
-                this.showToast(response.error || 'Failed to save note', 'error');
-            }
-        } catch (error) {
-            console.error('Error saving note:', error);
-            this.showToast('Error saving note', 'error');
-        }
-    }
-    
-    async deleteCurrentNote() {
-        if (!this.currentNote) return;
-        
-        if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
-            return;
+    getFileIcon(file) {
+        if (file.is_directory) {
+            return '<i class="fas fa-folder"></i>';
         }
         
-        try {
-            const response = await pywebview.api.delete_note(this.currentNote.id);
-            
-            if (response.success) {
-                // Remove note from local array
-                this.notes = this.notes.filter(n => n.id !== this.currentNote.id);
-                this.currentNote = null;
-                
-                this.renderNotesList();
-                this.showWelcomeScreen();
-                this.showToast('Note deleted');
-            } else {
-                this.showToast(response.error || 'Failed to delete note', 'error');
-            }
-        } catch (error) {
-            console.error('Error deleting note:', error);
-            this.showToast('Error deleting note', 'error');
-        }
+        const ext = file.name.split('.').pop().toLowerCase();
+        const iconMap = {
+            'txt': 'fas fa-file-alt',
+            'md': 'fab fa-markdown',
+            'py': 'fab fa-python',
+            'js': 'fab fa-js-square',
+            'html': 'fab fa-html5',
+            'css': 'fab fa-css3-alt',
+            'json': 'fas fa-file-code',
+            'xml': 'fas fa-file-code',
+            'pdf': 'fas fa-file-pdf',
+            'doc': 'fas fa-file-word',
+            'docx': 'fas fa-file-word',
+            'xls': 'fas fa-file-excel',
+            'xlsx': 'fas fa-file-excel',
+            'ppt': 'fas fa-file-powerpoint',
+            'pptx': 'fas fa-file-powerpoint',
+            'jpg': 'fas fa-file-image',
+            'jpeg': 'fas fa-file-image',
+            'png': 'fas fa-file-image',
+            'gif': 'fas fa-file-image',
+            'svg': 'fas fa-file-image',
+            'mp4': 'fas fa-file-video',
+            'avi': 'fas fa-file-video',
+            'mov': 'fas fa-file-video',
+            'mp3': 'fas fa-file-audio',
+            'wav': 'fas fa-file-audio',
+            'zip': 'fas fa-file-archive',
+            'tar': 'fas fa-file-archive',
+            'gz': 'fas fa-file-archive'
+        };
+        
+        return `<i class="${iconMap[ext] || 'fas fa-file'}"></i>`;
     }
     
-    async searchNotes(query) {
-        try {
-            const results = await pywebview.api.search_notes(query);
-            this.renderNotesList(results);
-        } catch (error) {
-            console.error('Error searching notes:', error);
-            this.showToast('Error searching notes', 'error');
-        }
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    selectFile(fileName) {
+        const file = this.files.find(f => f.name === fileName);
+        if (!file) return;
+        
+        this.showFileInfo(file);
+    }
+    
+    showFileInfo(file) {
+        const fileInfoHTML = `
+            <div class="file-info-header">
+                <div class="file-icon-large">${this.getFileIcon(file)}</div>
+                <div class="file-name-large">${this.escapeHtml(file.name)}</div>
+            </div>
+            <div class="file-properties">
+                <div class="property">
+                    <span class="label">Type:</span>
+                    <span class="value">${this.escapeHtml(file.type)}</span>
+                </div>
+                <div class="property">
+                    <span class="label">Size:</span>
+                    <span class="value">${file.is_directory ? 'Directory' : this.formatFileSize(file.size)}</span>
+                </div>
+                <div class="property">
+                    <span class="label">Modified:</span>
+                    <span class="value">${new Date(file.modified).toLocaleString()}</span>
+                </div>
+                <div class="property">
+                    <span class="label">Permissions:</span>
+                    <span class="value">${this.escapeHtml(file.permissions)}</span>
+                </div>
+                <div class="property">
+                    <span class="label">Path:</span>
+                    <span class="value">${this.escapeHtml(file.path)}</span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('fileInfoContent').innerHTML = fileInfoHTML;
+        this.showFileInfoPanel();
     }
     
     showWelcomeScreen() {
         this.welcomeScreen.style.display = 'flex';
-        this.noteEditor.style.display = 'none';
-        this.currentNote = null;
+        this.fileInfo.style.display = 'none';
     }
     
-    showNoteEditor() {
+    showFileInfoPanel() {
         this.welcomeScreen.style.display = 'none';
-        this.noteEditor.style.display = 'flex';
+        this.fileInfo.style.display = 'flex';
     }
     
     showToast(message, type = 'success') {
@@ -260,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wait for pywebview API to be available
     const initApp = () => {
         if (window.pywebview && window.pywebview.api) {
-            new NotesApp();
+            new FileExplorer();
         } else {
             setTimeout(initApp, 100);
         }
@@ -271,21 +254,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + N for new note
-    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+    // Ctrl/Cmd + R for refresh
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
         e.preventDefault();
-        document.getElementById('newNoteBtn').click();
-    }
-    
-    // Ctrl/Cmd + S for save
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        document.getElementById('saveNoteBtn').click();
+        document.getElementById('refreshBtn').click();
     }
     
     // Ctrl/Cmd + F for search
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         document.getElementById('searchInput').focus();
+    }
+    
+    // F5 for refresh
+    if (e.key === 'F5') {
+        e.preventDefault();
+        document.getElementById('refreshBtn').click();
     }
 });

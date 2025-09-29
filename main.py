@@ -1,119 +1,127 @@
 #!/usr/bin/env python3
 """
-MyNotes - A simple desktop notes application using pywebview
+File Explorer - A simple desktop file listing application using pywebview
 """
 
 import webview
-import json
 import os
+import stat
 from datetime import datetime
 
 
-class NotesAPI:
-    """Backend API for the notes application"""
+class FileAPI:
+    """Backend API for the file explorer application"""
     
     def __init__(self):
-        self.notes_file = "notes.json"
-        self.notes = self.load_notes()
+        self.current_directory = os.getcwd()
     
-    def load_notes(self):
-        """Load notes from JSON file"""
-        if os.path.exists(self.notes_file):
-            try:
-                with open(self.notes_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                return []
-        return []
-    
-    def save_notes(self):
-        """Save notes to JSON file"""
+    def get_files(self):
+        """Get all files and directories in the current folder"""
         try:
-            with open(self.notes_file, 'w', encoding='utf-8') as f:
-                json.dump(self.notes, f, indent=2, ensure_ascii=False)
-            return True
+            files = []
+            for item in os.listdir(self.current_directory):
+                item_path = os.path.join(self.current_directory, item)
+                
+                try:
+                    item_stat = os.stat(item_path)
+                    is_dir = os.path.isdir(item_path)
+                    
+                    file_info = {
+                        "name": item,
+                        "path": item_path,
+                        "is_directory": is_dir,
+                        "size": item_stat.st_size if not is_dir else None,
+                        "modified": datetime.fromtimestamp(item_stat.st_mtime).isoformat(),
+                        "permissions": stat.filemode(item_stat.st_mode),
+                        "type": "Directory" if is_dir else self.get_file_type(item)
+                    }
+                    files.append(file_info)
+                except (OSError, PermissionError) as e:
+                    # Skip files that can't be accessed
+                    continue
+            
+            # Sort: directories first, then files, both alphabetically
+            files.sort(key=lambda x: (not x["is_directory"], x["name"].lower()))
+            return files
+            
         except Exception as e:
-            print(f"Error saving notes: {e}")
-            return False
+            print(f"Error listing files: {e}")
+            return []
     
-    def get_notes(self):
-        """Get all notes"""
-        return self.notes
-    
-    def add_note(self, title, content):
-        """Add a new note"""
-        if not title.strip():
-            return {"success": False, "error": "Title cannot be empty"}
+    def get_file_type(self, filename):
+        """Get file type based on extension"""
+        if '.' not in filename:
+            return "File"
         
-        note = {
-            "id": len(self.notes) + 1,
-            "title": title.strip(),
-            "content": content.strip(),
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+        ext = filename.split('.')[-1].lower()
+        file_types = {
+            'txt': 'Text File',
+            'md': 'Markdown',
+            'py': 'Python',
+            'js': 'JavaScript',
+            'html': 'HTML',
+            'css': 'CSS',
+            'json': 'JSON',
+            'xml': 'XML',
+            'pdf': 'PDF',
+            'doc': 'Word Document',
+            'docx': 'Word Document',
+            'xls': 'Excel',
+            'xlsx': 'Excel',
+            'ppt': 'PowerPoint',
+            'pptx': 'PowerPoint',
+            'jpg': 'Image',
+            'jpeg': 'Image',
+            'png': 'Image',
+            'gif': 'Image',
+            'svg': 'SVG Image',
+            'mp4': 'Video',
+            'avi': 'Video',
+            'mov': 'Video',
+            'mp3': 'Audio',
+            'wav': 'Audio',
+            'zip': 'Archive',
+            'tar': 'Archive',
+            'gz': 'Archive',
+            'exe': 'Executable',
+            'app': 'Application'
         }
         
-        self.notes.append(note)
-        if self.save_notes():
-            return {"success": True, "note": note}
-        else:
-            return {"success": False, "error": "Failed to save note"}
+        return file_types.get(ext, f'{ext.upper()} File')
     
-    def update_note(self, note_id, title, content):
-        """Update an existing note"""
-        for note in self.notes:
-            if note["id"] == note_id:
-                note["title"] = title.strip()
-                note["content"] = content.strip()
-                note["updated_at"] = datetime.now().isoformat()
-                
-                if self.save_notes():
-                    return {"success": True, "note": note}
-                else:
-                    return {"success": False, "error": "Failed to save note"}
-        
-        return {"success": False, "error": "Note not found"}
+    def get_current_directory(self):
+        """Get current directory path"""
+        return self.current_directory
     
-    def delete_note(self, note_id):
-        """Delete a note"""
-        for i, note in enumerate(self.notes):
-            if note["id"] == note_id:
-                deleted_note = self.notes.pop(i)
-                if self.save_notes():
-                    return {"success": True, "note": deleted_note}
-                else:
-                    return {"success": False, "error": "Failed to save changes"}
+    def format_file_size(self, size_bytes):
+        """Format file size in human readable format"""
+        if size_bytes is None:
+            return ""
         
-        return {"success": False, "error": "Note not found"}
-    
-    def search_notes(self, query):
-        """Search notes by title or content"""
-        if not query.strip():
-            return self.notes
+        if size_bytes == 0:
+            return "0 B"
         
-        query = query.lower().strip()
-        results = []
+        size_names = ["B", "KB", "MB", "GB", "TB"]
+        i = 0
+        while size_bytes >= 1024 and i < len(size_names) - 1:
+            size_bytes /= 1024.0
+            i += 1
         
-        for note in self.notes:
-            if (query in note["title"].lower() or 
-                query in note["content"].lower()):
-                results.append(note)
-        
-        return results
+        return f"{size_bytes:.1f} {size_names[i]}"
 
 
 def create_app():
     """Create and configure the webview application"""
-    api = NotesAPI()
+    api = FileAPI()
     
     # Create the webview window
     window = webview.create_window(
-        title="MyNotes",
+        title="File Explorer",
         url="web/index.html",
         js_api=api,
-        width=1000,
-        height=700,
-        min_size=(800, 600),
+        width=1200,
+        height=800,
+        min_size=(900, 600),
         resizable=True,
         maximized=False,
         on_top=False,
