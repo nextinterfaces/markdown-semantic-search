@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown Explorer</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked@9.1.2/marked.min.js"></script>
 </head>
 <body>
@@ -13,14 +12,14 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1><i class="fab fa-markdown"></i> Markdown Explorer</h1>
+                <h1>Markdown Explorer</h1>
                 <div class="header-actions">
                     <div class="search-box">
-                        <i class="fas fa-search"></i>
+                        <span class="search-icon">🔍</span>
                         <input type="text" id="searchInput" placeholder="Search markdown files...">
                     </div>
                     <button id="refreshBtn" class="btn btn-primary">
-                        <i class="fas fa-sync-alt"></i> Refresh
+                        Refresh
                     </button>
                 </div>
             </div>
@@ -32,7 +31,7 @@
             <aside class="sidebar">
                 <div class="files-list" id="filesList">
                     <div class="empty-state" id="emptyState">
-                        <i class="fab fa-markdown"></i>
+                        <div class="empty-icon">[md]</div>
                         <h3>No markdown files found</h3>
                         <p>No .md or .mdx files found in the current directory or its subdirectories.</p>
                     </div>
@@ -43,7 +42,7 @@
             <section class="content-area">
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-content">
-                        <i class="fab fa-markdown"></i>
+                        <div class="welcome-icon">[md]</div>
                         <h2>Welcome to Markdown Explorer</h2>
                         <p>Explore your markdown files in an expandable tree view. Click on folders to expand/collapse them and click on files to view their rendered content.</p>
                         <div class="current-directory">

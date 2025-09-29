@@ -166,10 +166,10 @@ class MarkdownTreeExplorer {
         
         // Toggle button for directories
         if (item.is_directory) {
-            const toggleIcon = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+            const toggleIcon = isExpanded ? '-' : '+';
             html += `
                 <button class="tree-toggle" data-path="${this.escapeHtml(item.path)}">
-                    <i class="${toggleIcon}"></i>
+                    ${toggleIcon}
                 </button>
             `;
         } else {
@@ -198,16 +198,16 @@ class MarkdownTreeExplorer {
     getTreeIcon(item) {
         if (item.is_directory) {
             const isExpanded = this.expandedNodes.has(item.path);
-            return isExpanded ? '<i class="fas fa-folder-open"></i>' : '<i class="fas fa-folder"></i>';
+            return isExpanded ? '[d]' : '[d]';
         }
         
         const ext = item.name.split('.').pop().toLowerCase();
         const iconMap = {
-            'md': 'fab fa-markdown',
-            'mdx': 'fab fa-markdown'
+            'md': '[m]',
+            'mdx': '[m]'
         };
         
-        return `<i class="${iconMap[ext] || 'fab fa-markdown'}"></i>`;
+        return iconMap[ext] || '[f]';
     }
     
     formatFileSize(bytes) {
@@ -267,8 +267,8 @@ class MarkdownTreeExplorer {
                 <div class="file-name-large">${this.escapeHtml(item.name)}</div>
             </div>
             <div class="directory-info">
-                <p><i class="fas fa-info-circle"></i> This is a directory containing markdown files.</p>
-                <p><i class="fas fa-mouse-pointer"></i> Double-click to expand/collapse, or use the arrow icon.</p>
+                <p>Directory containing markdown files.</p>
+                <p>Click to expand/collapse, or use the +/- icon.</p>
                 <div class="file-properties">
                     <div class="property">
                         <span class="label">Path:</span>
@@ -299,7 +299,7 @@ class MarkdownTreeExplorer {
                     <div class="file-name-large">${this.escapeHtml(item.name)}</div>
                 </div>
                 <div class="markdown-loading">
-                    <i class="fas fa-spinner fa-spin"></i> Loading markdown content...
+                    Loading markdown content...
                 </div>
             `;
             document.getElementById('fileInfoContent').innerHTML = loadingHTML;
@@ -340,8 +340,7 @@ class MarkdownTreeExplorer {
                         <div class="file-name-large">${this.escapeHtml(item.name)}</div>
                     </div>
                     <div class="markdown-error">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Error loading file: ${this.escapeHtml(response.error)}</p>
+                        Error loading file: ${this.escapeHtml(response.error)}
                     </div>
                 `;
                 document.getElementById('fileInfoContent').innerHTML = errorHTML;

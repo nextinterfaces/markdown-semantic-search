@@ -6,11 +6,12 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #f8f9fa;
-    color: #2c3e50;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
     height: 100vh;
     overflow: hidden;
+    font-size: 12px;
 }
 
 .app-container {
@@ -21,10 +22,10 @@ body {
 
 /* Header */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1rem 2rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background: #2d2d30;
+    color: #d4d4d4;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #3e3e42;
     z-index: 100;
 }
 
@@ -37,14 +38,11 @@ body {
 }
 
 .header h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
-.header h1 i {
-    margin-right: 0.5rem;
-    color: #ffd700;
-}
 
 .header-actions {
     display: flex;
@@ -56,43 +54,46 @@ body {
     position: relative;
 }
 
-.search-box i {
+.search-icon {
     position: absolute;
-    left: 12px;
+    left: 8px;
     top: 50%;
     transform: translateY(-50%);
     color: #666;
-    font-size: 0.9rem;
+    font-size: 10px;
 }
 
 .search-box input {
-    padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-    border: none;
-    border-radius: 20px;
-    background: rgba(255,255,255,0.9);
-    width: 250px;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
+    padding: 0.3rem 0.5rem 0.3rem 2rem;
+    border: 1px solid #3e3e42;
+    border-radius: 3px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    width: 200px;
+    font-size: 11px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    transition: all 0.2s ease;
 }
 
 .search-box input:focus {
     outline: none;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+    background: #252526;
+    border-color: #007acc;
 }
 
 /* Buttons */
 .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #3e3e42;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.3rem;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .btn:hover {
@@ -101,12 +102,13 @@ body {
 }
 
 .btn-primary {
-    background: #3498db;
-    color: white;
+    background: #2d2d30;
+    color: #d4d4d4;
 }
 
 .btn-primary:hover {
-    background: #2980b9;
+    background: #3e3e42;
+    border-color: #007acc;
 }
 
 .btn-success {
@@ -136,11 +138,10 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 300px;
-    background: white;
-    border-right: 1px solid #e9ecef;
+    width: 250px;
+    background: #252526;
+    border-right: 1px solid #3e3e42;
     overflow-y: auto;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
 
 .files-list {
@@ -150,89 +151,94 @@ body {
 
 .empty-state {
     text-align: center;
-    padding: 3rem 2rem;
-    color: #6c757d;
+    padding: 2rem 1rem;
+    color: #858585;
 }
 
-.empty-state i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: #dee2e6;
+.empty-icon {
+    font-size: 16px;
+    margin-bottom: 0.5rem;
+    color: #858585;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .empty-state h3 {
     margin-bottom: 0.5rem;
-    color: #495057;
+    color: #d4d4d4;
+    font-size: 13px;
+    font-weight: 400;
 }
 
 /* Tree View Styles */
 .tree-item {
     cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.1s ease;
+    border-bottom: none;
 }
 
 .tree-item:hover {
-    background: #f8f9fa;
+    background: #2a2d2e;
 }
 
 .tree-item.selected {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #37373d;
+    color: #d4d4d4;
 }
 
 .tree-item-content {
     display: flex;
     align-items: center;
-    padding: 0.5rem 0.75rem;
-    gap: 0.5rem;
-    min-height: 40px;
+    padding: 0.2rem 0.5rem;
+    gap: 0.3rem;
+    min-height: 20px;
+    font-size: 12px;
 }
 
 .tree-toggle {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 3px;
-    color: #6c757d;
-    font-size: 0.8rem;
-    width: 20px;
-    height: 20px;
+    padding: 0;
+    color: #858585;
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .tree-toggle:hover {
-    background: rgba(0,0,0,0.1);
+    color: #d4d4d4;
 }
 
 .tree-item.selected .tree-toggle {
-    color: rgba(255,255,255,0.8);
+    color: #d4d4d4;
 }
 
 .tree-item.selected .tree-toggle:hover {
-    background: rgba(255,255,255,0.2);
+    color: #ffffff;
 }
 
 .tree-spacer {
-    width: 20px;
-    height: 20px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
 }
 
 .tree-icon {
-    font-size: 1.1rem;
-    color: #667eea;
-    width: 20px;
+    font-size: 11px;
+    color: #858585;
+    width: 16px;
     text-align: center;
     flex-shrink: 0;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .tree-item.selected .tree-icon {
-    color: rgba(255,255,255,0.9);
+    color: #d4d4d4;
 }
 
 .tree-details {
@@ -241,25 +247,26 @@ body {
 }
 
 .tree-name {
-    font-weight: 500;
-    font-size: 0.9rem;
-    line-height: 1.3;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 1.2;
     word-break: break-word;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .tree-children {
-    border-left: 1px solid #e9ecef;
-    margin-left: 10px;
+    border-left: 1px solid #3e3e42;
+    margin-left: 6px;
 }
 
 .current-directory {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background: #f8f9fa;
-    border-radius: 6px;
-    font-family: monospace;
-    font-size: 0.8rem;
-    color: #6c757d;
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: #2d2d30;
+    border-radius: 3px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-size: 10px;
+    color: #858585;
 }
 
 /* Content Area */
@@ -267,7 +274,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: white;
+    background: #1e1e1e;
     overflow: hidden;
 }
 
@@ -277,18 +284,21 @@ body {
     justify-content: center;
     height: 100%;
     text-align: center;
-    color: #6c757d;
+    color: #858585;
 }
 
-.welcome-content i {
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
-    color: #dee2e6;
+.welcome-icon {
+    font-size: 16px;
+    margin-bottom: 0.5rem;
+    color: #858585;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .welcome-content h2 {
-    margin-bottom: 1rem;
-    color: #495057;
+    margin-bottom: 0.5rem;
+    color: #d4d4d4;
+    font-size: 14px;
+    font-weight: 400;
 }
 
 /* File Info Panel */
@@ -310,15 +320,17 @@ body {
 }
 
 .file-icon-large {
-    font-size: 3rem;
-    color: #667eea;
+    font-size: 14px;
+    color: #858585;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .file-name-large {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #2c3e50;
+    font-size: 13px;
+    font-weight: 400;
+    color: #d4d4d4;
     word-break: break-word;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .file-properties {
@@ -340,27 +352,28 @@ body {
 }
 
 .property .label {
-    font-weight: 600;
-    color: #495057;
-    font-size: 0.9rem;
+    font-weight: 400;
+    color: #d4d4d4;
+    font-size: 11px;
 }
 
 .property .value {
-    color: #6c757d;
-    font-size: 0.9rem;
+    color: #858585;
+    font-size: 11px;
     word-break: break-all;
-    font-family: monospace;
-    background: #f8f9fa;
-    padding: 0.5rem;
-    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    background: #2d2d30;
+    padding: 0.3rem;
+    border-radius: 3px;
 }
 
 /* Markdown Content Styles */
 .markdown-content {
-    padding: 1rem 0;
-    line-height: 1.6;
-    color: #2c3e50;
+    padding: 0.5rem 0;
+    line-height: 1.4;
+    color: #d4d4d4;
     max-width: none;
+    font-size: 12px;
 }
 
 .markdown-content h1,
@@ -369,33 +382,33 @@ body {
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-    margin: 1.5rem 0 0.5rem 0;
-    color: #2c3e50;
-    font-weight: 600;
+    margin: 0.8rem 0 0.3rem 0;
+    color: #d4d4d4;
+    font-weight: 500;
 }
 
 .markdown-content h1 {
-    font-size: 1.8rem;
-    border-bottom: 2px solid #e9ecef;
-    padding-bottom: 0.5rem;
+    font-size: 16px;
+    border-bottom: 1px solid #3e3e42;
+    padding-bottom: 0.2rem;
 }
 
 .markdown-content h2 {
-    font-size: 1.5rem;
-    border-bottom: 1px solid #e9ecef;
-    padding-bottom: 0.3rem;
+    font-size: 14px;
+    border-bottom: 1px solid #3e3e42;
+    padding-bottom: 0.2rem;
 }
 
 .markdown-content h3 {
-    font-size: 1.3rem;
+    font-size: 13px;
 }
 
 .markdown-content h4 {
-    font-size: 1.1rem;
+    font-size: 12px;
 }
 
 .markdown-content p {
-    margin: 0.8rem 0;
+    margin: 0.4rem 0;
 }
 
 .markdown-content ul,
@@ -409,29 +422,30 @@ body {
 }
 
 .markdown-content blockquote {
-    border-left: 4px solid #667eea;
-    margin: 1rem 0;
-    padding: 0.5rem 1rem;
-    background: #f8f9fa;
-    color: #6c757d;
+    border-left: 2px solid #858585;
+    margin: 0.5rem 0;
+    padding: 0.3rem 0.6rem;
+    background: #2d2d30;
+    color: #858585;
     font-style: italic;
 }
 
 .markdown-content code {
-    background: #f1f3f4;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.85rem;
-    font-family: 'Courier New', Consolas, Monaco, monospace;
+    background: #2d2d30;
+    color: #d7ba7d;
+    padding: 0.1rem 0.3rem;
+    border-radius: 2px;
+    font-size: 11px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .markdown-content pre {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 6px;
+    background: #2d2d30;
+    padding: 0.5rem;
+    border-radius: 3px;
     overflow-x: auto;
-    margin: 1rem 0;
-    border: 1px solid #e9ecef;
+    margin: 0.5rem 0;
+    border: 1px solid #3e3e42;
 }
 
 .markdown-content pre code {
