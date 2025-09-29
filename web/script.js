@@ -7,6 +7,9 @@ class MarkdownTreeExplorer {
         this.currentDirectory = '';
         this.expandedNodes = new Set();
         this.selectedNode = null;
+        this.searchResultsData = [];
+        this.currentSearchType = 'filename';
+        this.isSemanticSearchAvailable = false;
         
         this.initializeElements();
         this.bindEvents();
@@ -20,6 +23,11 @@ class MarkdownTreeExplorer {
         this.welcomeScreen = document.getElementById('welcomeScreen');
         this.fileInfo = document.getElementById('fileInfo');
         this.searchInput = document.getElementById('searchInput');
+        this.searchType = document.getElementById('searchType');
+        this.buildIndexBtn = document.getElementById('buildIndexBtn');
+        this.searchResults = document.getElementById('searchResults');
+        this.searchResultsContent = document.getElementById('searchResultsContent');
+        this.searchResultsCount = document.getElementById('searchResultsCount');
         this.refreshBtn = document.getElementById('refreshBtn');
         this.toast = document.getElementById('toast');
     }
@@ -27,9 +35,11 @@ class MarkdownTreeExplorer {
     bindEvents() {
         // Button events
         this.refreshBtn.addEventListener('click', () => this.refreshFiles());
+        this.buildIndexBtn.addEventListener('click', () => this.buildSemanticIndex());
         
         // Search functionality
-        this.searchInput.addEventListener('input', (e) => this.filterTree(e.target.value));
+        this.searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+        this.searchType.addEventListener('change', (e) => this.handleSearchTypeChange(e.target.value));
     }
     
     async loadFiles() {
@@ -39,6 +49,9 @@ class MarkdownTreeExplorer {
             this.filteredTreeData = [...this.treeData];
             this.renderTree();
             this.updateCurrentDirectory();
+            
+            // Check if semantic search is available
+            this.checkSemanticSearchAvailability();
         } catch (error) {
             console.error('Error loading files:', error);
             this.showToast('Error loading files', 'error');
@@ -59,7 +72,7 @@ class MarkdownTreeExplorer {
         this.showToast('Markdown files refreshed');
     }
     
-    filterTree(query) {
+    filterTreeByFilename(query) {
         if (!query.trim()) {
             this.filteredTreeData = [...this.treeData];
         } else {
@@ -375,6 +388,227 @@ class MarkdownTreeExplorer {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    // Semantic Search Methods
+    
+    async checkSemanticSearchAvailability() {
+        try {
+            this.isSemanticSearchAvailable = await pywebview.api.is_semantic_search_available();
+            this.updateSemanticSearchUI();
+        } catch (error) {
+            console.error('Error checking semantic search availability:', error);
+            this.isSemanticSearchAvailable = false;
+            this.updateSemanticSearchUI();
+        }
+    }
+    
+    updateSemanticSearchUI() {
+        if (!this.isSemanticSearchAvailable) {
+            this.searchType.disabled = true;
+            this.buildIndexBtn.disabled = true;
+            this.buildIndexBtn.title = "Semantic search not available (missing dependencies)";
+            
+            // Remove semantic search option
+            const semanticOption = this.searchType.querySelector('option[value="semantic"]');
+            if (semanticOption) {
+                semanticOption.disabled = true;
+                semanticOption.textContent = "Semantic Search (Not Available)";
+            }
+        } else {
+            this.searchType.disabled = false;
+            this.buildIndexBtn.disabled = false;
+            this.buildIndexBtn.title = "Build semantic search index";
+        }
+    }
+    
+    handleSearchTypeChange(searchType) {
+        this.currentSearchType = searchType;
+        const currentQuery = this.searchInput.value;
+        
+        if (currentQuery.trim()) {
+            this.handleSearch(currentQuery);
+        } else {
+            this.hideSearchResults();
+        }
+    }
+    
+    async handleSearch(query) {
+        if (!query.trim()) {
+            this.hideSearchResults();
+            this.filteredTreeData = [...this.treeData];
+            this.renderTree();
+            return;
+        }
+        
+        if (this.currentSearchType === 'semantic') {
+            await this.performSemanticSearch(query);
+        } else {
+            this.hideSearchResults();
+            this.filterTreeByFilename(query);
+        }
+    }
+    
+    async performSemanticSearch(query) {
+        if (!this.isSemanticSearchAvailable) {
+            this.showToast('Semantic search not available', 'error');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            this.showSearchLoading();
+            
+            const response = await pywebview.api.semantic_search_query(query, 15);
+            
+            if (response.success) {
+                this.searchResultsData = response.results;
+                this.displaySearchResults(response.results, query);
+            } else {
+                this.showToast(`Search error: ${response.error}`, 'error');
+                this.hideSearchResults();
+            }
+        } catch (error) {
+            console.error('Error performing semantic search:', error);
+            this.showToast('Error performing semantic search', 'error');
+            this.hideSearchResults();
+        }
+    }
+    
+    showSearchLoading() {
+        this.searchResults.style.display = 'block';
+        this.welcomeScreen.style.display = 'none';
+        this.fileInfo.style.display = 'none';
+        
+        this.searchResultsContent.innerHTML = '<div class="search-loading">Searching...</div>';
+        this.searchResultsCount.textContent = '';
+    }
+    
+    displaySearchResults(results, query) {
+        if (results.length === 0) {
+            this.searchResultsContent.innerHTML = `
+                <div class="search-empty">
+                    <p>No results found for "${this.escapeHtml(query)}"</p>
+                    <small>Try different keywords or build the search index first.</small>
+                </div>
+            `;
+            this.searchResultsCount.textContent = '0 results';
+        } else {
+            const resultsHTML = results.map(result => this.createSearchResultHTML(result)).join('');
+            this.searchResultsContent.innerHTML = resultsHTML;
+            this.searchResultsCount.textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;
+            
+            // Add click handlers to search results
+            this.attachSearchResultEvents();
+        }
+        
+        this.searchResults.style.display = 'block';
+        this.welcomeScreen.style.display = 'none';
+        this.fileInfo.style.display = 'none';
+    }
+    
+    createSearchResultHTML(result) {
+        const similarity = (result.similarity * 100).toFixed(1);
+        const modifiedDate = new Date(result.modified_time * 1000).toLocaleDateString();
+        
+        return `
+            <div class="search-result-item" data-file-path="${this.escapeHtml(result.file_path)}">
+                <div class="search-result-header">
+                    <div class="search-result-file">${this.escapeHtml(result.file_name)}</div>
+                    <div class="search-result-similarity">${similarity}%</div>
+                </div>
+                <div class="search-result-content">${this.escapeHtml(result.content_preview)}</div>
+                <div class="search-result-meta">
+                    <span>📄 Chunk ${result.chunk_index + 1}</span>
+                    <span>📅 ${modifiedDate}</span>
+                    <span>📁 ${this.getShortPath(result.file_path)}</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    getShortPath(fullPath) {
+        const parts = fullPath.split('/');
+        if (parts.length > 3) {
+            return '.../' + parts.slice(-2).join('/');
+        }
+        return fullPath;
+    }
+    
+    attachSearchResultEvents() {
+        this.searchResultsContent.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const filePath = e.currentTarget.dataset.filePath;
+                this.openFileFromSearch(filePath);
+            });
+        });
+    }
+    
+    async openFileFromSearch(filePath) {
+        try {
+            const response = await pywebview.api.get_file_content(filePath);
+            if (response.success) {
+                // Create a temporary item object for display
+                const item = {
+                    name: response.filename,
+                    path: filePath,
+                    is_directory: false,
+                    size: response.content.length,
+                    modified: new Date().toISOString()
+                };
+                
+                await this.showMarkdownFile(item);
+            } else {
+                this.showToast(`Error opening file: ${response.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error opening file from search:', error);
+            this.showToast('Error opening file', 'error');
+        }
+    }
+    
+    hideSearchResults() {
+        this.searchResults.style.display = 'none';
+        this.searchResultsData = [];
+        
+        // Show welcome screen if no file is selected
+        if (this.fileInfo.style.display === 'none') {
+            this.showWelcomeScreen();
+        }
+    }
+    
+    async buildSemanticIndex() {
+        if (!this.isSemanticSearchAvailable) {
+            this.showToast('Semantic search not available', 'error');
+            return;
+        }
+        
+        try {
+            // Disable button and show loading state
+            this.buildIndexBtn.disabled = true;
+            this.buildIndexBtn.textContent = 'Building...';
+            
+            this.showToast('Building semantic search index...', 'info');
+            
+            const response = await pywebview.api.build_semantic_index();
+            
+            if (response.success) {
+                const results = response.results;
+                this.showToast(
+                    `Index built successfully! Processed ${results.processed_files} files, ${results.total_chunks} chunks.`,
+                    'success'
+                );
+            } else {
+                this.showToast(`Error building index: ${response.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error building semantic index:', error);
+            this.showToast('Error building semantic index', 'error');
+        } finally {
+            // Re-enable button
+            this.buildIndexBtn.disabled = false;
+            this.buildIndexBtn.textContent = 'Build Index';
+        }
     }
 }
 

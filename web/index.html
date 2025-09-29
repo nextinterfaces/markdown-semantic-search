@@ -14,9 +14,20 @@
             <div class="header-content">
                 <h1>Markdown Explorer</h1>
                 <div class="header-actions">
-                    <div class="search-box">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="searchInput" placeholder="Search markdown files...">
+                    <div class="search-container">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="searchInput" placeholder="Search files or content...">
+                        </div>
+                        <div class="search-controls">
+                            <select id="searchType" class="search-type-select">
+                                <option value="filename">File Names</option>
+                                <option value="semantic">Semantic Search</option>
+                            </select>
+                            <button id="buildIndexBtn" class="btn btn-secondary" title="Build semantic search index">
+                                Build Index
+                            </button>
+                        </div>
                     </div>
                     <button id="refreshBtn" class="btn btn-primary">
                         Refresh
@@ -54,6 +65,17 @@
                 <div class="file-info" id="fileInfo" style="display: none;">
                     <div class="file-info-content" id="fileInfoContent">
                         <!-- File details will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Semantic Search Results -->
+                <div class="search-results" id="searchResults" style="display: none;">
+                    <div class="search-results-header">
+                        <h3>Search Results</h3>
+                        <span class="search-results-count" id="searchResultsCount"></span>
+                    </div>
+                    <div class="search-results-content" id="searchResultsContent">
+                        <!-- Search results will be populated here -->
                     </div>
                 </div>
             </section>

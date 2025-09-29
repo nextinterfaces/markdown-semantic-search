@@ -7,6 +7,7 @@ import webview
 import os
 import stat
 from datetime import datetime
+from semantic_search import SemanticSearchManager
 
 
 class FileAPI:
@@ -15,6 +16,9 @@ class FileAPI:
     def __init__(self):
         self.current_directory = os.getcwd()
         self.markdown_extensions = {'.md', '.mdx'}
+        # Initialize semantic search manager
+        self.semantic_search = None
+        self._initialize_semantic_search()
     
     def get_files(self):
         """Get all files and directories in tree structure, filtering for markdown files"""
@@ -182,6 +186,169 @@ class FileAPI:
             i += 1
         
         return f"{size_bytes:.1f} {size_names[i]}"
+    
+    def _initialize_semantic_search(self):
+        """Initialize semantic search manager with error handling"""
+        try:
+            self.semantic_search = SemanticSearchManager()
+            print("Semantic search initialized successfully")
+        except Exception as e:
+            print(f"Warning: Failed to initialize semantic search: {e}")
+            print("Semantic search features will be disabled")
+            self.semantic_search = None
+    
+    def is_semantic_search_available(self):
+        """Check if semantic search is available"""
+        return self.semantic_search is not None
+    
+    def get_all_markdown_files(self):
+        """Get list of all markdown files in the current directory tree"""
+        markdown_files = []
+        
+        try:
+            for root, dirs, files in os.walk(self.current_directory):
+                # Skip hidden directories
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                
+                for file in files:
+                    if self._is_markdown_file(file):
+                        file_path = os.path.join(root, file)
+                        markdown_files.append(file_path)
+                        
+        except (OSError, PermissionError) as e:
+            print(f"Error scanning for markdown files: {e}")
+            
+        return markdown_files
+    
+    def build_semantic_index(self):
+        """Build or rebuild the semantic search index"""
+        if not self.semantic_search:
+            return {
+                "success": False,
+                "error": "Semantic search not available"
+            }
+        
+        try:
+            # Get all markdown files
+            markdown_files = self.get_all_markdown_files()
+            
+            if not markdown_files:
+                return {
+                    "success": False,
+                    "error": "No markdown files found to index"
+                }
+            
+            # Build the index
+            results = self.semantic_search.build_index(markdown_files)
+            
+            return {
+                "success": True,
+                "results": results
+            }
+            
+        except Exception as e:
+            error_msg = f"Error building semantic index: {str(e)}"
+            print(error_msg)
+            return {
+                "success": False,
+                "error": error_msg
+            }
+    
+    def semantic_search_query(self, query, top_k=10):
+        """Perform semantic search on indexed content"""
+        if not self.semantic_search:
+            return {
+                "success": False,
+                "error": "Semantic search not available"
+            }
+        
+        if not query or not query.strip():
+            return {
+                "success": False,
+                "error": "Empty search query"
+            }
+        
+        try:
+            results = self.semantic_search.semantic_search(query.strip(), top_k)
+            
+            # Format results for frontend
+            formatted_results = []
+            for result in results:
+                formatted_results.append({
+                    "file_path": result["file_path"],
+                    "file_name": result["file_name"],
+                    "content_preview": result["content"][:200] + "..." if len(result["content"]) > 200 else result["content"],
+                    "full_content": result["content"],
+                    "similarity": result["similarity"],
+                    "chunk_index": result["chunk_index"],
+                    "modified_time": result["modified_time"]
+                })
+            
+            return {
+                "success": True,
+                "results": formatted_results,
+                "query": query,
+                "total_results": len(formatted_results)
+            }
+            
+        except Exception as e:
+            error_msg = f"Error performing semantic search: {str(e)}"
+            print(error_msg)
+            return {
+                "success": False,
+                "error": error_msg
+            }
+    
+    def get_semantic_search_stats(self):
+        """Get statistics about the semantic search index"""
+        if not self.semantic_search:
+            return {
+                "success": False,
+                "error": "Semantic search not available"
+            }
+        
+        try:
+            stats = self.semantic_search.get_stats()
+            return {
+                "success": True,
+                "stats": stats
+            }
+        except Exception as e:
+            error_msg = f"Error getting semantic search stats: {str(e)}"
+            print(error_msg)
+            return {
+                "success": False,
+                "error": error_msg
+            }
+    
+    def refresh_semantic_index(self):
+        """Refresh the semantic search index with any new or changed files"""
+        if not self.semantic_search:
+            return {
+                "success": False,
+                "error": "Semantic search not available"
+            }
+        
+        try:
+            # Get all current markdown files
+            current_files = self.get_all_markdown_files()
+            
+            # Re-process all files (the semantic search manager handles change detection)
+            results = self.semantic_search.build_index(current_files)
+            
+            return {
+                "success": True,
+                "message": "Semantic index refreshed successfully",
+                "results": results
+            }
+            
+        except Exception as e:
+            error_msg = f"Error refreshing semantic index: {str(e)}"
+            print(error_msg)
+            return {
+                "success": False,
+                "error": error_msg
+            }
 
 
 def create_app():
