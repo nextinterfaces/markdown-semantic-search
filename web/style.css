@@ -138,10 +138,13 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 250px;
+    width: 320px;
+    min-width: 200px;
+    max-width: 60vw;
     background: #252526;
     border-right: 1px solid #3e3e42;
     overflow-y: auto;
+    position: relative;
 }
 
 .files-list {
@@ -156,10 +159,7 @@ body {
 }
 
 .empty-icon {
-    font-size: 16px;
-    margin-bottom: 0.5rem;
-    color: #858585;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    display: none;
 }
 
 .empty-state h3 {
@@ -229,12 +229,7 @@ body {
 }
 
 .tree-icon {
-    font-size: 11px;
-    color: #858585;
-    width: 16px;
-    text-align: center;
-    flex-shrink: 0;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    display: none;
 }
 
 .tree-item.selected .tree-icon {
@@ -288,10 +283,7 @@ body {
 }
 
 .welcome-icon {
-    font-size: 16px;
-    margin-bottom: 0.5rem;
-    color: #858585;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    display: none;
 }
 
 .welcome-content h2 {
@@ -675,20 +667,20 @@ body {
     cursor: not-allowed;
 }
 
-/* Search Results */
+/* Search Results - Neovim Style */
 .search-results {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #1e1e1e;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
     overflow: hidden;
     max-height: 70vh;
     overflow-y: auto;
 }
 
 .search-results-header {
-    background: #f8f9fa;
+    background: #2d2d30;
     padding: 1rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #3c3c3c;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -696,12 +688,12 @@ body {
 
 .search-results-header h3 {
     margin: 0;
-    color: #333;
+    color: #cccccc;
     font-size: 1.1rem;
 }
 
 .search-results-count {
-    color: #666;
+    color: #9d9d9d;
     font-size: 0.9rem;
 }
 
@@ -710,14 +702,14 @@ body {
 }
 
 .search-result-item {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #3c3c3c;
     padding: 1rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
 .search-result-item:hover {
-    background: #f8f9fa;
+    background: #2d2d30;
 }
 
 .search-result-item:last-child {
@@ -733,13 +725,13 @@ body {
 
 .search-result-file {
     font-weight: 600;
-    color: #333;
+    color: #cccccc;
     font-size: 1rem;
 }
 
 .search-result-similarity {
-    background: #e9ecef;
-    color: #495057;
+    background: #3c3c3c;
+    color: #cccccc;
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
     font-size: 0.8rem;
@@ -747,13 +739,13 @@ body {
 }
 
 .search-result-content {
-    color: #666;
+    color: #b9b9b9;
     line-height: 1.5;
     margin: 0.5rem 0;
-    background: #f8f9fa;
+    background: #252526;
     padding: 0.75rem;
     border-radius: 4px;
-    border-left: 3px solid #007bff;
+    border-left: 3px solid #569cd6;
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
 }
@@ -762,7 +754,7 @@ body {
     display: flex;
     gap: 1rem;
     font-size: 0.8rem;
-    color: #999;
+    color: #808080;
     margin-top: 0.5rem;
 }
 
@@ -776,29 +768,30 @@ body {
 .search-loading {
     text-align: center;
     padding: 2rem;
-    color: #666;
+    color: #cccccc;
 }
 
 .search-loading::before {
-    content: "⏳";
+    content: "Searching...";
     display: block;
-    font-size: 2rem;
+    font-size: 1rem;
     margin-bottom: 1rem;
+    color: #9d9d9d;
 }
 
 /* Empty Search Results */
 .search-empty {
     text-align: center;
     padding: 2rem;
-    color: #666;
+    color: #cccccc;
 }
 
 .search-empty::before {
-    content: "🔍";
+    content: "No results found";
     display: block;
-    font-size: 2rem;
+    font-size: 1rem;
     margin-bottom: 1rem;
-    opacity: 0.5;
+    color: #9d9d9d;
 }
 
 /* Responsive Search */
@@ -833,4 +826,33 @@ body {
         flex-direction: column;
         gap: 0.25rem;
     }
+}
+
+/* Sidebar Resizer */
+.sidebar-resizer {
+    position: absolute;
+    top: 0;
+    right: -3px;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 10;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-resizer:hover {
+    background-color: #007bff;
+    opacity: 0.5;
+}
+
+.sidebar-resizer:active {
+    background-color: #007bff;
+    opacity: 0.8;
+}
+
+/* Prevent text selection during resize */
+body.resizing {
+    user-select: none;
+    cursor: col-resize !important;
 }

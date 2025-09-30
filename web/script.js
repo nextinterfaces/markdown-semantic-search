@@ -13,6 +13,7 @@ class MarkdownTreeExplorer {
         
         this.initializeElements();
         this.bindEvents();
+        this.initializeResize();
         this.loadFiles();
     }
     
@@ -209,18 +210,8 @@ class MarkdownTreeExplorer {
     }
     
     getTreeIcon(item) {
-        if (item.is_directory) {
-            const isExpanded = this.expandedNodes.has(item.path);
-            return isExpanded ? '[d]' : '[d]';
-        }
-        
-        const ext = item.name.split('.').pop().toLowerCase();
-        const iconMap = {
-            'md': '[m]',
-            'mdx': '[m]'
-        };
-        
-        return iconMap[ext] || '[f]';
+        // Return empty string to remove all icons
+        return '';
     }
     
     formatFileSize(bytes) {
@@ -609,6 +600,51 @@ class MarkdownTreeExplorer {
             this.buildIndexBtn.disabled = false;
             this.buildIndexBtn.textContent = 'Build Index';
         }
+    }
+    
+    // Sidebar Resize Functionality
+    
+    initializeResize() {
+        const sidebar = document.querySelector('.sidebar');
+        const resizer = document.createElement('div');
+        resizer.className = 'sidebar-resizer';
+        sidebar.appendChild(resizer);
+        
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+        
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = parseInt(document.defaultView.getComputedStyle(sidebar).width, 10);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        });
+        
+        const handleMouseMove = (e) => {
+            if (!isResizing) return;
+            
+            const newWidth = startWidth + e.clientX - startX;
+            const minWidth = 200;
+            const maxWidth = window.innerWidth * 0.6;
+            
+            if (newWidth >= minWidth && newWidth <= maxWidth) {
+                sidebar.style.width = newWidth + 'px';
+            }
+        };
+        
+        const handleMouseUp = () => {
+            if (isResizing) {
+                isResizing = false;
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        };
     }
 }
 
