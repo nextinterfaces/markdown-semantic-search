@@ -180,7 +180,7 @@ class MarkdownTreeExplorer {
         
         // Toggle button for directories
         if (item.is_directory) {
-            const toggleIcon = isExpanded ? '-' : '+';
+            const toggleIcon = isExpanded ? '▼' : '▶';
             html += `
                 <button class="tree-toggle" data-path="${this.escapeHtml(item.path)}">
                     ${toggleIcon}
@@ -396,15 +396,15 @@ class MarkdownTreeExplorer {
     
     updateSemanticSearchUI() {
         if (!this.isSemanticSearchAvailable) {
-            this.searchType.disabled = true;
-            this.buildIndexBtn.disabled = true;
-            this.buildIndexBtn.title = "Semantic search not available (missing dependencies)";
+            this.searchType.disabled = false; // Allow user to try semantic search
+            this.buildIndexBtn.disabled = false; // Allow user to build index (will initialize on click)
+            this.buildIndexBtn.title = "Build semantic search index (will initialize on first use)";
             
-            // Remove semantic search option
+            // Update semantic search option
             const semanticOption = this.searchType.querySelector('option[value="semantic"]');
             if (semanticOption) {
-                semanticOption.disabled = true;
-                semanticOption.textContent = "Semantic Search (Not Available)";
+                semanticOption.disabled = false;
+                semanticOption.textContent = "Semantic Search";
             }
         } else {
             this.searchType.disabled = false;
@@ -441,20 +441,19 @@ class MarkdownTreeExplorer {
     }
     
     async performSemanticSearch(query) {
-        if (!this.isSemanticSearchAvailable) {
-            this.showToast('Semantic search not available', 'error');
-            return;
-        }
-        
         try {
-            // Show loading state
-            this.showSearchLoading();
+            // Show loading state with initialization message
+            this.showSearchLoading('Initializing semantic search...');
             
             const response = await pywebview.api.semantic_search_query(query, 15);
             
             if (response.success) {
                 this.searchResultsData = response.results;
                 this.displaySearchResults(response.results, query);
+                
+                // Update availability status after successful initialization
+                this.isSemanticSearchAvailable = true;
+                this.updateSemanticSearchUI();
             } else {
                 this.showToast(`Search error: ${response.error}`, 'error');
                 this.hideSearchResults();
@@ -466,12 +465,12 @@ class MarkdownTreeExplorer {
         }
     }
     
-    showSearchLoading() {
+    showSearchLoading(message = 'Searching...') {
         this.searchResults.style.display = 'block';
         this.welcomeScreen.style.display = 'none';
         this.fileInfo.style.display = 'none';
         
-        this.searchResultsContent.innerHTML = '<div class="search-loading">Searching...</div>';
+        this.searchResultsContent.innerHTML = `<div class="search-loading">${message}</div>`;
         this.searchResultsCount.textContent = '';
     }
     
@@ -569,17 +568,12 @@ class MarkdownTreeExplorer {
     }
     
     async buildSemanticIndex() {
-        if (!this.isSemanticSearchAvailable) {
-            this.showToast('Semantic search not available', 'error');
-            return;
-        }
-        
         try {
             // Disable button and show loading state
             this.buildIndexBtn.disabled = true;
-            this.buildIndexBtn.textContent = 'Building...';
+            this.buildIndexBtn.textContent = 'Initializing...';
             
-            this.showToast('Building semantic search index...', 'info');
+            this.showToast('Initializing semantic search and building index...', 'info');
             
             const response = await pywebview.api.build_semantic_index();
             
@@ -589,6 +583,10 @@ class MarkdownTreeExplorer {
                     `Index built successfully! Processed ${results.processed_files} files, ${results.total_chunks} chunks.`,
                     'success'
                 );
+                
+                // Update availability status after successful initialization
+                this.isSemanticSearchAvailable = true;
+                this.updateSemanticSearchUI();
             } else {
                 this.showToast(`Error building index: ${response.error}`, 'error');
             }
@@ -680,5 +678,17 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'F5') {
         e.preventDefault();
         document.getElementById('refreshBtn').click();
+    }
+    
+    // Allow Ctrl/Cmd + A (Select All), Ctrl/Cmd + C (Copy) in content areas
+    const contentAreas = ['.markdown-content', '.file-info', '.search-result-content'];
+    const isInContentArea = contentAreas.some(selector => {
+        const element = document.querySelector(selector);
+        return element && element.contains(e.target);
+    });
+    
+    if (isInContentArea && (e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'c')) {
+        // Allow default browser behavior for select all and copy in content areas
+        return;
     }
 });

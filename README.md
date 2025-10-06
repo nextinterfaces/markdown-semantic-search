@@ -59,7 +59,7 @@ pip install uv
 
 3. **Run the application**
    ```bash
-   uv run python main.py
+   uv run python src/main.py
    # Or use the included run script:
    ./run.sh
    ```
@@ -86,7 +86,7 @@ If you prefer using pip:
 
 3. **Run the application**
    ```bash
-   python main.py
+   python src/main.py
    ```
 
 ## 🎯 How to Use
@@ -132,7 +132,10 @@ The application uses a hybrid architecture:
 
 ```
 markdown-explorer/
-├── main.py              # Main application entry point
+├── src/                 # Python source code
+│   ├── main.py          # Main application entry point
+│   ├── semantic_search.py # Semantic search functionality
+│   └── __init__.py      # Package initialization
 ├── run.sh              # Quick run script
 ├── pyproject.toml       # Project configuration and dependencies (uv)
 ├── requirements.txt     # Python dependencies (pip fallback)
@@ -147,7 +150,7 @@ markdown-explorer/
 
 ### Key Components
 
-1. **FileAPI Class** (`main.py`): Handles file system operations and tree building
+1. **FileAPI Class** (`src/main.py`): Handles file system operations and tree building
 2. **MarkdownTreeExplorer Class** (`script.js`): Manages the tree view interface and interactions
 3. **Responsive UI**: Clean tree design that works on different screen sizes
 
@@ -191,7 +194,7 @@ Edit `web/style.css` to customize colors, fonts, and layout:
 
 The application is designed to be easily extensible:
 
-1. **Backend**: Add new methods to the `FileAPI` class in `main.py`
+1. **Backend**: Add new methods to the `FileAPI` class in `src/main.py`
 2. **Frontend**: Extend the `MarkdownTreeExplorer` class in `web/script.js`
 3. **UI**: Modify `web/index.html` and `web/style.css` for interface changes
 
@@ -219,7 +222,7 @@ The application runs with debug mode disabled by default for a clean user experi
 - **macOS**: Right-click and select "Inspect Element" or use `Cmd+Option+I`
 - **Windows/Linux**: Right-click and select "Inspect" or use `F12`
 
-To enable debug mode (auto-opens developer tools), change `debug=False` to `debug=True` in `main.py`.
+To enable debug mode (auto-opens developer tools), change `debug=False` to `debug=True` in `src/main.py`.
 
 ## 📁 Supported File Types
 

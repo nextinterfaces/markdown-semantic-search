@@ -16,9 +16,10 @@ class FileAPI:
     def __init__(self):
         self.current_directory = os.getcwd()
         self.markdown_extensions = {'.md', '.mdx'}
-        # Initialize semantic search manager
+        # Initialize semantic search manager lazily
         self.semantic_search = None
-        self._initialize_semantic_search()
+        self._semantic_search_initialized = False
+        print("Markdown Explorer started - semantic search will be initialized on first use")
     
     def get_files(self):
         """Get all files and directories in tree structure, filtering for markdown files"""
@@ -188,17 +189,25 @@ class FileAPI:
         return f"{size_bytes:.1f} {size_names[i]}"
     
     def _initialize_semantic_search(self):
-        """Initialize semantic search manager with error handling"""
+        """Initialize semantic search manager with error handling (lazy loading)"""
+        if self._semantic_search_initialized:
+            return
+        
         try:
+            print("Initializing semantic search (this may take a few seconds)...")
             self.semantic_search = SemanticSearchManager()
+            self._semantic_search_initialized = True
             print("Semantic search initialized successfully")
         except Exception as e:
             print(f"Warning: Failed to initialize semantic search: {e}")
             print("Semantic search features will be disabled")
             self.semantic_search = None
+            self._semantic_search_initialized = True  # Don't try again
     
     def is_semantic_search_available(self):
-        """Check if semantic search is available"""
+        """Check if semantic search is available (initializes on first check)"""
+        if not self._semantic_search_initialized:
+            self._initialize_semantic_search()
         return self.semantic_search is not None
     
     def get_all_markdown_files(self):
@@ -222,6 +231,9 @@ class FileAPI:
     
     def build_semantic_index(self):
         """Build or rebuild the semantic search index"""
+        if not self._semantic_search_initialized:
+            self._initialize_semantic_search()
+            
         if not self.semantic_search:
             return {
                 "success": False,
@@ -256,6 +268,9 @@ class FileAPI:
     
     def semantic_search_query(self, query, top_k=10):
         """Perform semantic search on indexed content"""
+        if not self._semantic_search_initialized:
+            self._initialize_semantic_search()
+            
         if not self.semantic_search:
             return {
                 "success": False,
@@ -301,6 +316,9 @@ class FileAPI:
     
     def get_semantic_search_stats(self):
         """Get statistics about the semantic search index"""
+        if not self._semantic_search_initialized:
+            self._initialize_semantic_search()
+            
         if not self.semantic_search:
             return {
                 "success": False,
@@ -323,6 +341,9 @@ class FileAPI:
     
     def refresh_semantic_index(self):
         """Refresh the semantic search index with any new or changed files"""
+        if not self._semantic_search_initialized:
+            self._initialize_semantic_search()
+            
         if not self.semantic_search:
             return {
                 "success": False,
@@ -358,7 +379,7 @@ def create_app():
     # Create the webview window
     window = webview.create_window(
         title="Markdown Explorer",
-        url="web/index.html",
+        url="../web/index.html",
         js_api=api,
         width=1200,
         height=800,

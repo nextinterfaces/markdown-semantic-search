@@ -17,7 +17,7 @@ Your Markdown Explorer now includes semantic search capabilities using SQLite fo
 
 2. **Run the application:**
    ```bash
-   python main.py
+   python src/main.py
    # or
    ./run.sh
    ```
@@ -82,7 +82,7 @@ The semantic search system creates these files in your project directory:
 
 - `semantic_search.db` - SQLite database with file metadata and chunks
 - `faiss_index.bin` - FAISS vector index for fast similarity search
-- `semantic_search.py` - The semantic search implementation
+- `src/semantic_search.py` - The semantic search implementation
 
 ## Tips for Best Results
 
@@ -109,7 +109,7 @@ The semantic search system creates these files in your project directory:
 
 ## Advanced Configuration
 
-You can modify the semantic search behavior by editing `semantic_search.py`:
+You can modify the semantic search behavior by editing `src/semantic_search.py`:
 
 - **Change the model**: Modify `model_name` parameter for different embedding models
 - **Adjust chunk size**: Change `chunk_size` parameter for different content splitting
