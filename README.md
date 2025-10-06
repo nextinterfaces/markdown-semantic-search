@@ -1,4 +1,4 @@
-# MyNotes - Semantic Search of Markdown Files
+# Semantic Search of Markdown Files
 
 A desktop application for semantic search of markdown files using SQLite vector database and FAISS.
 
